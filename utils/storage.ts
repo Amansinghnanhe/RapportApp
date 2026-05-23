@@ -1,22 +1,42 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const TOKEN_KEY = 'token';
 
-export const saveToken = async (token: string) => {
-  await AsyncStorage.setItem('token', token);
+// Save token
+export const saveToken = async (token: string): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(TOKEN_KEY, token);
+  } catch (error) {
+    console.log('Error saving token:', error);
+  }
 };
 
-
-export const getToken = async () => {
-  return await AsyncStorage.getItem('token');
+// Get token
+export const getToken = async (): Promise<string | null> => {
+  try {
+    return await AsyncStorage.getItem(TOKEN_KEY);
+  } catch (error) {
+    console.log('Error getting token:', error);
+    return null;
+  }
 };
 
-
-export const removeToken = async () => {
-  await AsyncStorage.removeItem('token');
+// Remove token
+export const removeToken = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(TOKEN_KEY);
+  } catch (error) {
+    console.log('Error removing token:', error);
+  }
 };
 
-
-export const isLoggedIn = async () => {
-  const token = await AsyncStorage.getItem('token');
-  return token !== null;
+// Check login
+export const isLoggedIn = async (): Promise<boolean> => {
+  try {
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    return !!token;
+  } catch (error) {
+    console.log('Error checking login:', error);
+    return false;
+  }
 };

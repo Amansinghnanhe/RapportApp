@@ -14,23 +14,52 @@ const RegisterScreen = ({ navigation }: any) => {
   const [mobile, setMobile] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // ✅ simple validation helpers
+  const isValidEmail = (val: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+
+  const isValidMobile = (val: string) =>
+    /^[0-9]{10}$/.test(val);
+
   const handleRegister = async () => {
-    if (!name || !email || !mobile) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
+    const fullName = name.trim();
+    const emailId = email.trim();
+    const mobileNo = mobile.trim();
+
+    // ❌ validations
+    if (!fullName || !emailId || !mobileNo) {
+      return Alert.alert('Error', 'All fields are required');
     }
+
+    if (!isValidEmail(emailId)) {
+      return Alert.alert('Error', 'Invalid email format');
+    }
+
+    if (!isValidMobile(mobileNo)) {
+      return Alert.alert('Error', 'Mobile must be 10 digits');
+    }
+
     try {
       setLoading(true);
+
       const res = await axios.post(`${API_URL}/auth/register`, {
-        fullName: name,
-        email: email,
-        mobile: mobile
+        fullName,
+        email: emailId,
+        mobile: mobileNo
       });
-      const userId = res.data.data.userId;
-      Alert.alert('Success', 'OTP sent!');
+
+      const userId = res.data?.data?.userId;
+
+      Alert.alert('Success', 'OTP sent successfully');
+
+      // 🔥 IMPORTANT FIX (prevents back navigation issue)
       navigation.navigate('OTP', { userId });
+
     } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Registration Failed');
+      Alert.alert(
+        'Error',
+        error.response?.data?.message || 'Registration Failed'
+      );
     } finally {
       setLoading(false);
     }
@@ -45,88 +74,57 @@ const RegisterScreen = ({ navigation }: any) => {
 
         {/* Header */}
         <View style={styles.headerContainer}>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoText}>R</Text>
-          </View>
+          <Text style={styles.logoText}>R</Text>
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Fill in your details to get started</Text>
+          <Text style={styles.subtitle}>Fill your details</Text>
         </View>
 
         {/* Form */}
         <View style={styles.formContainer}>
 
-          {/* Name Field */}
-          <Text style={styles.label}>Full Name</Text>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputIcon}>👤</Text>
-            <TextInput
-              placeholder="Enter your full name"
-              placeholderTextColor="#aaa"
-              value={name}
-              onChangeText={setName}
-              style={styles.input}
-            />
-          </View>
+          <TextInput
+            placeholder="Full Name"
+            value={name}
+            onChangeText={setName}
+            style={styles.input}
+          />
 
-          {/* Email Field */}
-          <Text style={styles.label}>Email Address</Text>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputIcon}>✉️</Text>
-            <TextInput
-              placeholder="Enter your email"
-              placeholderTextColor="#aaa"
-              value={email}
-              onChangeText={setEmail}
-              style={styles.input}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-          {email.length > 0 && (
-            <Text style={styles.hintText}>📧 {email}</Text>
-          )}
+          <TextInput
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            style={styles.input}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
 
-          {/* Mobile Field */}
-          <Text style={styles.label}>Mobile Number</Text>
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputIcon}>📱</Text>
-            <TextInput
-              placeholder="Enter 10 digit mobile number"
-              placeholderTextColor="#aaa"
-              value={mobile}
-              onChangeText={setMobile}
-              style={styles.input}
-              keyboardType="phone-pad"
-              maxLength={10}
-            />
-          </View>
-          {mobile.length > 0 && (
-            <Text style={styles.hintText}>📞 +91 {mobile} ({mobile.length}/10)</Text>
-          )}
+          <TextInput
+            placeholder="Mobile (10 digits)"
+            value={mobile}
+            onChangeText={setMobile}
+            style={styles.input}
+            keyboardType="numeric"
+            maxLength={10}
+          />
 
         </View>
 
-        {/* Register Button */}
+        {/* Button */}
         <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
+          style={[styles.button, loading && styles.disabled]}
           onPress={handleRegister}
           disabled={loading}
         >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Create Account →</Text>
-          }
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.btnText}>Create Account</Text>
+          )}
         </TouchableOpacity>
 
-        {/* Login Link */}
-        <TouchableOpacity
-          style={styles.loginLink}
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={styles.loginText}>
-            Already have an account?{' '}
-            <Text style={styles.loginHighlight}>Login</Text>
-          </Text>
+        {/* Login */}
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.link}>Already have account? Login</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -139,124 +137,51 @@ export default RegisterScreen;
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    backgroundColor: '#F8F9FF',
-    padding: 24,
     justifyContent: 'center',
+    padding: 20
   },
-
-  // Header
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 32,
-  },
-  logoCircle: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#007BFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#007BFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    marginBottom: 20
   },
   logoText: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#007BFF'
   },
   title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#1A1A2E',
-    marginBottom: 6,
+    fontSize: 22,
+    fontWeight: 'bold'
   },
   subtitle: {
-    fontSize: 14,
-    color: '#888',
+    color: '#777'
   },
-
-  // Form
   formContainer: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#555',
-    marginBottom: 6,
-    marginTop: 4,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    marginBottom: 6,
-    backgroundColor: '#FAFAFA',
-  },
-  inputIcon: {
-    fontSize: 16,
-    marginRight: 8,
+    marginBottom: 20
   },
   input: {
-    flex: 1,
-    paddingVertical: 13,
-    fontSize: 15,
-    color: '#333',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10
   },
-  hintText: {
-    fontSize: 12,
-    color: '#007BFF',
-    marginBottom: 12,
-    marginLeft: 4,
-  },
-
-  // Button
   button: {
     backgroundColor: '#007BFF',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#007BFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    padding: 14,
+    borderRadius: 10,
+    alignItems: 'center'
   },
-  buttonDisabled: {
-    backgroundColor: '#88B8FF',
+  disabled: {
+    backgroundColor: '#88B8FF'
   },
-  buttonText: {
+  btnText: {
     color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
+    fontWeight: 'bold'
   },
-
-  // Login Link
-  loginLink: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  loginText: {
-    fontSize: 14,
-    color: '#888',
-  },
-  loginHighlight: {
-    color: '#007BFF',
-    fontWeight: 'bold',
-  },
+  link: {
+    marginTop: 15,
+    textAlign: 'center',
+    color: '#007BFF'
+  }
 });
