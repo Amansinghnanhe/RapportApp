@@ -2,33 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ActivityIndicator, View } from 'react-native';
-
 import RegisterScreen from './screens/RegisterScreen';
 import LoginScreen from './screens/LoginScreen';
 import OTPScreen from './screens/OTPScreen';
 import HomeScreen from './screens/HomeScreen';
-
 import { getToken } from './utils/storage';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    checkAuth();
+    checkLogin();
   }, []);
 
-  const checkAuth = async () => {
-    try {
-      const t = await getToken();
-      setToken(t);
-    } catch (error) {
-      setToken(null);
-    } finally {
-      setIsLoading(false);
-    }
+  const checkLogin = async () => {
+    const token = await getToken();
+    setIsLoggedIn(token !== null);
+    setIsLoading(false);
   };
 
   if (isLoading) {
@@ -41,28 +34,14 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-
-        {token ? (
-          <>
-            <Stack.Screen name="Home">
-              {(props) => <HomeScreen {...props} />}
-            </Stack.Screen>
-          </>
-        ) : (
-          <>
-            <Stack.Screen name="Register">
-              {(props) => <RegisterScreen {...props} onAuthChange={checkAuth} />}
-            </Stack.Screen>
-
-            <Stack.Screen name="Login">
-              {(props) => <LoginScreen {...props} onAuthChange={checkAuth} />}
-            </Stack.Screen>
-
-            <Stack.Screen name="OTP" component={OTPScreen} />
-          </>
-        )}
-
+      <Stack.Navigator
+        initialRouteName={isLoggedIn ? 'Home' : 'Register'}
+        screenOptions={{ headerShown: false }}
+      >
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="OTP" component={OTPScreen} />
+        <Stack.Screen name="Home" component={HomeScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
