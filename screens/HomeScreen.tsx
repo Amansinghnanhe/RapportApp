@@ -12,20 +12,26 @@ export default function HomeScreen({ navigation, route }: any) {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Logout',
-        style: 'destructive',
+        text: 'Logout', style: 'destructive',
         onPress: async () => {
           await removeToken();
-          navigation.navigate('Login');
+          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
         }
       }
     ]);
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
+  const actions = [
+    { icon: '👤', label: 'Profile', screen: 'Profile' },
+    { icon: '⚙️', label: 'Settings', screen: 'Settings' },
+    { icon: '🔔', label: 'Notifications', screen: 'Notifications' },
+    { icon: '❓', label: 'Help', screen: null },
+  ];
 
-      {/* Top Header Card */}
+  return (
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+
+      {/* Header Card */}
       <View style={styles.headerCard}>
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarText}>👤</Text>
@@ -34,30 +40,26 @@ export default function HomeScreen({ navigation, route }: any) {
         <Text style={styles.welcomeSubText}>You are successfully logged in</Text>
         <View style={styles.activeBadge}>
           <View style={styles.activeDot} />
-          <Text style={styles.activeText}>Active</Text>
+          <Text style={styles.activeText}>Active Session</Text>
         </View>
       </View>
 
-      {/* Stats Cards */}
+      {/* Stats Row */}
       <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Text style={styles.statIcon}>🔐</Text>
-          <Text style={styles.statValue}>Secure</Text>
-          <Text style={styles.statLabel}>Account</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statIcon}>✅</Text>
-          <Text style={styles.statValue}>Verified</Text>
-          <Text style={styles.statLabel}>Status</Text>
-        </View>
-        <View style={styles.statCard}>
-          <Text style={styles.statIcon}>⭐</Text>
-          <Text style={styles.statValue}>Active</Text>
-          <Text style={styles.statLabel}>Member</Text>
-        </View>
+        {[
+          { icon: '🔐', val: 'Secure', lbl: 'Account' },
+          { icon: '✅', val: 'Verified', lbl: 'Status' },
+          { icon: '⭐', val: 'Active', lbl: 'Member' },
+        ].map((s, i) => (
+          <View key={i} style={styles.statCard}>
+            <Text style={styles.statIcon}>{s.icon}</Text>
+            <Text style={styles.statValue}>{s.val}</Text>
+            <Text style={styles.statLabel}>{s.lbl}</Text>
+          </View>
+        ))}
       </View>
 
-      {/* Token Info Card */}
+      {/* Token Card */}
       {token && (
         <View style={styles.tokenCard}>
           <Text style={styles.tokenTitle}>🎫 Session Token</Text>
@@ -70,26 +72,21 @@ export default function HomeScreen({ navigation, route }: any) {
       {/* Quick Actions */}
       <Text style={styles.sectionTitle}>Quick Actions</Text>
       <View style={styles.actionsGrid}>
-        <TouchableOpacity style={styles.actionCard}>
-          <Text style={styles.actionIcon}>👤</Text>
-          <Text style={styles.actionText}>Profile</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionCard}>
-          <Text style={styles.actionIcon}>⚙️</Text>
-          <Text style={styles.actionText}>Settings</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionCard}>
-          <Text style={styles.actionIcon}>🔔</Text>
-          <Text style={styles.actionText}>Notifications</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionCard}>
-          <Text style={styles.actionIcon}>❓</Text>
-          <Text style={styles.actionText}>Help</Text>
-        </TouchableOpacity>
+        {actions.map((a, i) => (
+          <TouchableOpacity
+            key={i}
+            style={styles.actionCard}
+            onPress={() => a.screen ? navigation.navigate(a.screen) : null}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.actionIcon}>{a.icon}</Text>
+            <Text style={styles.actionText}>{a.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
-      {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      {/* Logout */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
         <Text style={styles.logoutIcon}>🚪</Text>
         <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
@@ -99,161 +96,68 @@ export default function HomeScreen({ navigation, route }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: '#F8F9FF',
-    padding: 20,
-  },
+  container: { flexGrow: 1, backgroundColor: '#F8F9FF', padding: 20, paddingBottom: 30 },
   headerCard: {
     backgroundColor: '#007BFF',
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 24,
+    padding: 28,
     alignItems: 'center',
     marginBottom: 20,
-    elevation: 8,
+    elevation: 10,
     shadowColor: '#007BFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 14,
   },
   avatarCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
+    width: 84, height: 84, borderRadius: 42,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    justifyContent: 'center', alignItems: 'center', marginBottom: 14,
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)',
   },
-  avatarText: {
-    fontSize: 36,
-  },
-  welcomeText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  welcomeSubText: {
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    marginBottom: 12,
-  },
+  avatarText: { fontSize: 38 },
+  welcomeText: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
+  welcomeSubText: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 14 },
   activeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row', alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 5, borderRadius: 20,
   },
-  activeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#4CD964',
-    marginRight: 6,
-  },
-  activeText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
+  activeDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4CD964', marginRight: 7 },
+  activeText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, gap: 10 },
   statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    alignItems: 'center',
-    marginHorizontal: 4,
-    elevation: 3,
+    flex: 1, backgroundColor: '#fff', borderRadius: 16,
+    padding: 14, alignItems: 'center', elevation: 4,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 8,
   },
-  statIcon: {
-    fontSize: 22,
-    marginBottom: 6,
-  },
-  statValue: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#1A1A2E',
-  },
-  statLabel: {
-    fontSize: 11,
-    color: '#888',
-    marginTop: 2,
-  },
+  statIcon: { fontSize: 22, marginBottom: 6 },
+  statValue: { fontSize: 13, fontWeight: 'bold', color: '#1A1A2E' },
+  statLabel: { fontSize: 11, color: '#9999B0', marginTop: 2 },
   tokenCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    elevation: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007BFF',
+    backgroundColor: '#fff', borderRadius: 14, padding: 16,
+    marginBottom: 20, elevation: 3,
+    borderLeftWidth: 4, borderLeftColor: '#007BFF',
   },
-  tokenTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#555',
-    marginBottom: 6,
-  },
-  tokenValue: {
-    fontSize: 12,
-    color: '#888',
-    fontFamily: 'monospace',
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1A1A2E',
-    marginBottom: 12,
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-  },
+  tokenTitle: { fontSize: 13, fontWeight: '600', color: '#555', marginBottom: 6 },
+  tokenValue: { fontSize: 12, color: '#888', fontFamily: 'monospace' },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#1A1A2E', marginBottom: 12 },
+  actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
   actionCard: {
-    width: '48%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginBottom: 12,
-    elevation: 3,
+    width: '47%', backgroundColor: '#fff', borderRadius: 16,
+    padding: 18, alignItems: 'center', elevation: 4,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06, shadowRadius: 8,
   },
-  actionIcon: {
-    fontSize: 28,
-    marginBottom: 8,
-  },
-  actionText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#333',
-  },
+  actionIcon: { fontSize: 30, marginBottom: 8 },
+  actionText: { fontSize: 13, fontWeight: '600', color: '#333' },
   logoutButton: {
-    flexDirection: 'row',
-    backgroundColor: '#FF3B30',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 6,
-    marginBottom: 10,
+    flexDirection: 'row', backgroundColor: '#FF3B30',
+    padding: 17, borderRadius: 16, alignItems: 'center', justifyContent: 'center',
+    elevation: 8, shadowColor: '#FF3B30',
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.35, shadowRadius: 10,
   },
-  logoutIcon: {
-    fontSize: 20,
-    marginRight: 8,
-  },
-  logoutText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
+  logoutIcon: { fontSize: 20, marginRight: 10 },
+  logoutText: { color: '#fff', fontSize: 17, fontWeight: 'bold' },
 });
