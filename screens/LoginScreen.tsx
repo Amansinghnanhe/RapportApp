@@ -7,7 +7,10 @@ import {
 import axios from 'axios';
 import { saveToken } from '../utils/storage';
 
-const API_URL = 'http://192.168.29.108:5000/api/v1';
+// ✅ Apna WiFi IP yahan daalo — phone aur laptop ek hi WiFi pe hone chahiye
+// Windows: ipconfig → "Wireless LAN adapter Wi-Fi" → IPv4 Address
+// Mac/Linux: ifconfig → en0 → inet
+const API_URL = 'http://192.168.29.108:5000/api/v1'; // ← sirf IP change karo
 
 export default function LoginScreen({ navigation }: any) {
   const [emailOrMobile, setEmailOrMobile] = useState('');
@@ -22,13 +25,17 @@ export default function LoginScreen({ navigation }: any) {
     }
     try {
       setLoading(true);
-      const res = await axios.post(`${API_URL}/auth/login`, { emailOrMobile, password });
+      const res = await axios.post(
+        `${API_URL}/auth/login`,
+        { emailOrMobile, password },
+        { timeout: 10000 } // ✅ timeout add kiya — network hang pe crash nahi karega
+      );
       const token = res.data.data.token;
       await saveToken(token);
-      // ✅ Navigate to Main (tab navigator) instead of Home directly
-      navigation.reset({ index: 0, routes: [{ name: 'Main', params: { token } }] });
+      // ✅ Main (tab navigator) pe navigate karo — token ab storage mein hai
+      navigation.reset({ index: 0, routes: [{ name: 'Main' }] }); // params hataye — HomeScreen storage se padhega
     } catch (error: any) {
-      Alert.alert('Login Failed', error.response?.data?.message || 'Please try again');
+      Alert.alert('Login Failed', error.response?.data?.message || 'Please check your network and try again');
     } finally {
       setLoading(false);
     }

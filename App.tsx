@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -87,12 +87,14 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
+        // ✅ FIX: token params hataye — ab storage se padha jata hai har screen mein
         initialRouteName={isLoggedIn ? 'Main' : 'Register'}
         screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="OTP" component={OTPScreen} />
+        {/* ✅ initialParams hataye — HomeScreen khud storage se token padhega */}
         <Stack.Screen name="Main" component={MainTabs} />
       </Stack.Navigator>
     </NavigationContainer>

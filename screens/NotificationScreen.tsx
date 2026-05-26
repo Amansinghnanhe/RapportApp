@@ -2,14 +2,15 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, ActivityIndicator,
-  RefreshControl, Alert
+  RefreshControl
 } from 'react-native';
 import axios from 'axios';
+import { Buffer } from 'buffer'; // ✅ FIX 1: atob() ki jagah Buffer use karo — RN mein atob crash karta hai
 import { getToken } from '../utils/storage';
 
+// ✅ Apna WiFi IP yahan daalo — phone aur laptop ek hi WiFi pe hone chahiye
 const API_URL = 'http://192.168.29.108:5000/api/v1';
 
-// ✅ Backend ke same NotificationType match kiya
 const NOTIFICATION_COLORS: Record<string, { color: string; bg: string; icon: string }> = {
   OTP:              { color: '#007BFF', bg: '#EBF4FF', icon: '🔢' },
   SIM_RENEWAL:      { color: '#6F42C1', bg: '#F4EFFF', icon: '🔄' },
@@ -43,15 +44,18 @@ export default function NotificationScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // ✅ Token se userId nikalo (JWT decode)
-  const getUserIdFromToken = async () => {
+  // ✅ FIX 1: atob() hataya — React Native mein kaam nahi karta, Buffer.from() use kiya
+  const getUserIdFromToken = async (): Promise<string | null> => {
     try {
       const token = await getToken();
       if (!token) return null;
-      // JWT ka middle part (payload) decode karo
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const base64Payload = token.split('.')[1];
+      const payload = JSON.parse(
+        Buffer.from(base64Payload, 'base64').toString('utf-8')
+      );
       return payload.id || payload._id || payload.userId || null;
-    } catch {
+    } catch (e) {
+      console.log('JWT decode error:', e);
       return null;
     }
   };
@@ -59,44 +63,50 @@ export default function NotificationScreen() {
   const fetchNotifications = useCallback(async () => {
     try {
       const id = userId || await getUserIdFromToken();
-      if (!id) return;
-      setUserId(id);
+      if (!id) {
+        console.log('User ID not found from token');
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      if (!userId) setUserId(id);
 
       const token = await getToken();
-      const res = await axios.get(`${API_URL}/notification/user/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
+      const res = await axios.get(`${API_URL}/notifications/user/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000, // ✅ FIX 3: timeout add kiya — network hang pe stuck nahi hoga
       });
       setNotifications(res.data.data || []);
     } catch (error: any) {
-      console.log('Notification fetch error:', error);
+      console.log('Notification fetch error:', error?.message || error);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [userId]);
 
+  // ✅ FIX 2: dependency [fetchNotifications] daali — userId set hone ke baad re-fetch hoga
   useEffect(() => {
     fetchNotifications();
-  }, []);
+  }, [fetchNotifications]);
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchNotifications();
   };
 
-  // ✅ Notification read mark karo
   const markAsRead = async (notifId: string) => {
     try {
       const token = await getToken();
-      await axios.patch(`${API_URL}/notification/read/${notifId}`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.patch(`${API_URL}/notifications/read/${notifId}`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 10000,
       });
-      // Local state update karo
       setNotifications(prev =>
         prev.map(n => n._id === notifId ? { ...n, isRead: true } : n)
       );
-    } catch (error) {
-      console.log('Mark read error:', error);
+    } catch (error: any) {
+      console.log('Mark read error:', error?.message || error);
     }
   };
 
