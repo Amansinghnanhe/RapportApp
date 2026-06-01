@@ -49,6 +49,7 @@ export default function HomeScreen({ navigation }: any) {
     { icon: '👤', label: 'Profile', screen: 'Profile' },
     { icon: '⚙️', label: 'Settings', screen: 'Settings' },
     { icon: '🔔', label: 'Notifications', screen: 'Notifications' },
+    { icon: '🎫', label: 'Support', screen: 'SupportTickets' }, 
     { icon: '❓', label: 'Help', screen: null },
   ];
 

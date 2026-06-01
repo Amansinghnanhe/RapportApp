@@ -7,10 +7,7 @@ import {
 import axios from 'axios';
 import { saveToken } from '../utils/storage';
 
-// ✅ Apna WiFi IP yahan daalo — phone aur laptop ek hi WiFi pe hone chahiye
-// Windows: ipconfig → "Wireless LAN adapter Wi-Fi" → IPv4 Address
-// Mac/Linux: ifconfig → en0 → inet
-const API_URL = 'http://192.168.29.108:5000/api/v1'; // ← sirf IP change karo
+const API_URL = 'http://192.168.29.108:5000/api/v1';
 
 export default function LoginScreen({ navigation }: any) {
   const [emailOrMobile, setEmailOrMobile] = useState('');
@@ -28,12 +25,11 @@ export default function LoginScreen({ navigation }: any) {
       const res = await axios.post(
         `${API_URL}/auth/login`,
         { emailOrMobile, password },
-        { timeout: 10000 } // ✅ timeout add kiya — network hang pe crash nahi karega
+        { timeout: 10000 }
       );
       const token = res.data.data.token;
       await saveToken(token);
-      // ✅ Main (tab navigator) pe navigate karo — token ab storage mein hai
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] }); // params hataye — HomeScreen storage se padhega
+      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
     } catch (error: any) {
       Alert.alert('Login Failed', error.response?.data?.message || 'Please check your network and try again');
     } finally {
@@ -65,6 +61,8 @@ export default function LoginScreen({ navigation }: any) {
               style={styles.input}
               autoCapitalize="none"
               keyboardType="email-address"
+              autoComplete="email"
+              textContentType="emailAddress"
             />
           </View>
 
@@ -78,6 +76,8 @@ export default function LoginScreen({ navigation }: any) {
               onChangeText={setPassword}
               style={styles.input}
               secureTextEntry={!showPassword}
+              autoComplete="current-password"
+              textContentType="password"
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>

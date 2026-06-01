@@ -9,25 +9,25 @@ const settingsGroups = [
   {
     title: 'Account',
     items: [
-      { icon: '👤', title: 'Edit Profile', subtitle: 'Update your personal info' },
-      { icon: '🔒', title: 'Change Password', subtitle: 'Keep your account secure' },
-      { icon: '📱', title: 'Linked Devices', subtitle: 'Manage active sessions' },
+      { icon: '👤', title: 'Edit Profile', subtitle: 'Update your personal info', screen: 'Profile', color: '#EEF2FF' },
+      { icon: '🔒', title: 'Change Password', subtitle: 'Keep your account secure', screen: 'ChangePassword', color: '#FFF0EF' },
+      { icon: '📱', title: 'Linked Devices', subtitle: 'Manage active sessions', screen: 'LinkedDevices', color: '#EAFAF1' },
     ],
   },
   {
     title: 'Preferences',
     items: [
-      { icon: '🔔', title: 'Notifications', subtitle: 'Manage alerts & reminders' },
-      { icon: '🌐', title: 'Language', subtitle: 'English' },
-      { icon: '🎨', title: 'Appearance', subtitle: 'Light mode' },
+      { icon: '🔔', title: 'Notifications', subtitle: 'Manage alerts & reminders', screen: 'Notifications', color: '#FFF8EC' },
+      { icon: '🌐', title: 'Language', subtitle: 'English', screen: 'Language', color: '#EBF4FF' },
+      { icon: '🎨', title: 'Appearance', subtitle: 'Light mode', screen: 'Appearance', color: '#F4EFFF' },
     ],
   },
   {
     title: 'Support',
     items: [
-      { icon: '❓', title: 'Help & Support', subtitle: 'Get help from our team' },
-      { icon: 'ℹ️', title: 'About App', subtitle: 'Version 1.0.0' },
-      { icon: '📄', title: 'Privacy Policy', subtitle: 'Read our policy' },
+      { icon: '🎫', title: 'Help & Support', subtitle: 'Raise a support ticket', screen: 'SupportTickets', color: '#EAFAF1' },
+      { icon: 'ℹ️', title: 'About App', subtitle: 'Version 1.0.0', screen: 'AboutApp', color: '#EBF4FF' },
+      { icon: '📄', title: 'Privacy Policy', subtitle: 'Read our policy', screen: 'PrivacyPolicy', color: '#F5F5F5' },
     ],
   },
 ];
@@ -46,9 +46,20 @@ export default function SettingsScreen({ navigation }: any) {
     ]);
   };
 
+  // ✅ FIXED: Ab saare screens navigate karenge — koi "coming soon" nahi
+  const handlePress = (screen: string | null) => {
+    if (!screen) return;
+    navigation.navigate(screen);
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <Text style={styles.pageTitle}>Settings</Text>
+
+      {/* Header */}
+      <View style={styles.headerRow}>
+        <Text style={styles.pageTitle}>Settings</Text>
+        <Text style={styles.headerSub}>Manage your account</Text>
+      </View>
 
       {settingsGroups.map((group, gi) => (
         <View key={gi} style={styles.groupContainer}>
@@ -62,8 +73,9 @@ export default function SettingsScreen({ navigation }: any) {
                   ii < group.items.length - 1 && styles.settingRowBorder
                 ]}
                 activeOpacity={0.7}
+                onPress={() => handlePress(item.screen)}
               >
-                <View style={styles.iconBox}>
+                <View style={[styles.iconBox, { backgroundColor: item.color }]}>
                   <Text style={styles.settingIcon}>{item.icon}</Text>
                 </View>
                 <View style={styles.settingContent}>
@@ -77,6 +89,13 @@ export default function SettingsScreen({ navigation }: any) {
         </View>
       ))}
 
+      {/* App Version */}
+      <View style={styles.versionBox}>
+        <Text style={styles.versionText}>RapportApp v1.0.0</Text>
+        <Text style={styles.versionSub}>Made with ❤️ by Aman</Text>
+      </View>
+
+      {/* Logout */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
         <Text style={styles.logoutText}>🚪  Logout</Text>
       </TouchableOpacity>
@@ -87,9 +106,14 @@ export default function SettingsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#F8F9FF', padding: 20, paddingBottom: 30 },
-  pageTitle: { fontSize: 22, fontWeight: 'bold', color: '#1A1A2E', marginBottom: 20 },
+  headerRow: { marginBottom: 24 },
+  pageTitle: { fontSize: 26, fontWeight: 'bold', color: '#1A1A2E' },
+  headerSub: { fontSize: 13, color: '#9999B0', marginTop: 4 },
   groupContainer: { marginBottom: 20 },
-  groupTitle: { fontSize: 12, fontWeight: '700', color: '#9999B0', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
+  groupTitle: {
+    fontSize: 12, fontWeight: '700', color: '#9999B0',
+    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 4,
+  },
   groupCard: {
     backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden',
     elevation: 4, shadowColor: '#000',
@@ -98,14 +122,17 @@ const styles = StyleSheet.create({
   settingRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
   settingRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F4F4FA' },
   iconBox: {
-    width: 40, height: 40, borderRadius: 12,
-    backgroundColor: '#F0F4FF', justifyContent: 'center', alignItems: 'center', marginRight: 12,
+    width: 42, height: 42, borderRadius: 12,
+    justifyContent: 'center', alignItems: 'center', marginRight: 14,
   },
   settingIcon: { fontSize: 20 },
   settingContent: { flex: 1 },
   settingTitle: { fontSize: 15, fontWeight: '600', color: '#1A1A2E' },
   settingSubtitle: { fontSize: 12, color: '#9999B0', marginTop: 2 },
   arrow: { fontSize: 22, color: '#D0D0E0' },
+  versionBox: { alignItems: 'center', marginVertical: 16 },
+  versionText: { fontSize: 13, color: '#9999B0', fontWeight: '600' },
+  versionSub: { fontSize: 12, color: '#C0C0D0', marginTop: 4 },
   logoutButton: {
     backgroundColor: '#FF3B30', padding: 17, borderRadius: 14,
     alignItems: 'center', elevation: 8, marginTop: 4,

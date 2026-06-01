@@ -11,6 +11,18 @@ import HomeScreen from './screens/HomeScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import NotificationScreen from './screens/NotificationScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import AnalyticsScreen from './screens/AnalyticsScreen';
+import SupportTicketListScreen from './screens/SupportTicketListScreen';
+import CreateTicketScreen from './screens/CreateTicketScreen';
+
+// ✅ Naye screens import
+import ChangePasswordScreen from './screens/ChangePasswordScreen';
+import LinkedDevicesScreen from './screens/LinkedDevicesScreen';
+import LanguageScreen from './screens/LanguageScreen';
+import AppearanceScreen from './screens/AppearanceScreen';
+import AboutAppScreen from './screens/AboutAppScreen';
+import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
+
 import { getToken } from './utils/storage';
 
 const Stack = createNativeStackNavigator();
@@ -18,7 +30,7 @@ const Tab = createBottomTabNavigator();
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const icons: Record<string, string> = {
-    Home: '🏠', Profile: '👤', Notifications: '🔔', Settings: '⚙️',
+    Home: '🏠', Profile: '👤', Notifications: '🔔', Settings: '⚙️', Analytics: '📊',
   };
   return (
     <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>
@@ -59,6 +71,7 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
       <Tab.Screen name="Notifications" component={NotificationScreen} />
+      <Tab.Screen name="Analytics" component={AnalyticsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
@@ -87,15 +100,23 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        // ✅ FIX: token params hataye — ab storage se padha jata hai har screen mein
         initialRouteName={isLoggedIn ? 'Main' : 'Register'}
         screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="OTP" component={OTPScreen} />
-        {/* ✅ initialParams hataye — HomeScreen khud storage se token padhega */}
         <Stack.Screen name="Main" component={MainTabs} />
+        <Stack.Screen name="SupportTickets" component={SupportTicketListScreen} />
+        <Stack.Screen name="CreateTicket" component={CreateTicketScreen} />
+
+        {/* ✅ Naye screens register */}
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+        <Stack.Screen name="LinkedDevices" component={LinkedDevicesScreen} />
+        <Stack.Screen name="Language" component={LanguageScreen} />
+        <Stack.Screen name="Appearance" component={AppearanceScreen} />
+        <Stack.Screen name="AboutApp" component={AboutAppScreen} />
+        <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
