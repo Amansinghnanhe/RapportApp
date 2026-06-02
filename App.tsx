@@ -15,7 +15,7 @@ import AnalyticsScreen from './screens/AnalyticsScreen';
 import SupportTicketListScreen from './screens/SupportTicketListScreen';
 import CreateTicketScreen from './screens/CreateTicketScreen';
 
-// ✅ Naye screens import
+// Naye screens import
 import ChangePasswordScreen from './screens/ChangePasswordScreen';
 import LinkedDevicesScreen from './screens/LinkedDevicesScreen';
 import LanguageScreen from './screens/LanguageScreen';
@@ -23,7 +23,12 @@ import AppearanceScreen from './screens/AppearanceScreen';
 import AboutAppScreen from './screens/AboutAppScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 
-import { getToken } from './utils/storage';
+// 🔥 NEW: Testing ke liye jo naye dashboards commands se bnaye hain unhe import kiya
+import AdminDashboard from './screens/AdminDashboard';
+import MRDashboard from './screens/MRDashboard';
+
+// Storage utility imports
+import { getToken, getRole } from './utils/storage';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -39,14 +44,17 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   );
 }
 
-function MainTabs() {
+// Main Tabs Component
+function MainTabs({ route }: any) {
+  // 🔥 FIXED: .toUpperCase() lagaya taaki 'admin', 'mr' ya 'ADMIN', 'MR' dono validation match ho jayein
+  const rawRole = route.params?.role || 'USER';
+  const userRole = rawRole.toUpperCase();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarIcon: ({ focused }) => (
-          <TabIcon name={route.name} focused={focused} />
-        ),
+        tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
         tabBarLabel: ({ focused, color }) => (
           <Text style={{ fontSize: 10, color, fontWeight: focused ? '700' : '400' }}>
             {route.name}
@@ -58,10 +66,6 @@ function MainTabs() {
           backgroundColor: '#fff',
           borderTopWidth: 0,
           elevation: 20,
-          shadowColor: '#007BFF',
-          shadowOffset: { width: 0, height: -4 },
-          shadowOpacity: 0.08,
-          shadowRadius: 12,
           height: Platform.OS === 'ios' ? 84 : 62,
           paddingBottom: Platform.OS === 'ios' ? 24 : 8,
           paddingTop: 8,
@@ -71,7 +75,12 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
       <Tab.Screen name="Notifications" component={NotificationScreen} />
-      <Tab.Screen name="Analytics" component={AnalyticsScreen} />
+      
+      {/* 🔥 FIXED: Capital letters 'ADMIN' aur 'MR' check kiya */}
+      {(userRole === 'ADMIN' || userRole === 'MR') && (
+        <Tab.Screen name="Analytics" component={AnalyticsScreen} />
+      )}
+      
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
@@ -80,12 +89,16 @@ function MainTabs() {
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState<string | null>(null); 
 
   useEffect(() => { checkLogin(); }, []);
 
   const checkLogin = async () => {
     const token = await getToken();
+    const userRole = await getRole(); 
+    
     setIsLoggedIn(token !== null);
+    setRole(userRole);
     setIsLoading(false);
   };
 
@@ -100,17 +113,28 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName={isLoggedIn ? 'Main' : 'Register'}
+        initialRouteName={isLoggedIn ? 'Main' : 'Login'}
         screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="OTP" component={OTPScreen} />
-        <Stack.Screen name="Main" component={MainTabs} />
+        
+        {/* Main tabs stack: Isme role pass kar rahe hain */}
+        <Stack.Screen 
+          name="Main" 
+          component={MainTabs} 
+          initialParams={{ role: role }} 
+        />
+        
+        {/* 🔥 NEW REGISTERED SCREENS: Login Screen ke redirect actions se ab ye direct link ho jayengi */}
+        <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
+        <Stack.Screen name="MRDashboard" component={MRDashboard} />
+        
         <Stack.Screen name="SupportTickets" component={SupportTicketListScreen} />
         <Stack.Screen name="CreateTicket" component={CreateTicketScreen} />
 
-        {/* ✅ Naye screens register */}
+        {/* Naye screens register */}
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
         <Stack.Screen name="LinkedDevices" component={LinkedDevicesScreen} />
         <Stack.Screen name="Language" component={LanguageScreen} />

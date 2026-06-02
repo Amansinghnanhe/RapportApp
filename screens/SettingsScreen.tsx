@@ -1,38 +1,29 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert
+  TouchableOpacity, Alert, ActivityIndicator
 } from 'react-native';
-import { removeToken } from '../utils/storage';
-
-const settingsGroups = [
-  {
-    title: 'Account',
-    items: [
-      { icon: '👤', title: 'Edit Profile', subtitle: 'Update your personal info', screen: 'Profile', color: '#EEF2FF' },
-      { icon: '🔒', title: 'Change Password', subtitle: 'Keep your account secure', screen: 'ChangePassword', color: '#FFF0EF' },
-      { icon: '📱', title: 'Linked Devices', subtitle: 'Manage active sessions', screen: 'LinkedDevices', color: '#EAFAF1' },
-    ],
-  },
-  {
-    title: 'Preferences',
-    items: [
-      { icon: '🔔', title: 'Notifications', subtitle: 'Manage alerts & reminders', screen: 'Notifications', color: '#FFF8EC' },
-      { icon: '🌐', title: 'Language', subtitle: 'English', screen: 'Language', color: '#EBF4FF' },
-      { icon: '🎨', title: 'Appearance', subtitle: 'Light mode', screen: 'Appearance', color: '#F4EFFF' },
-    ],
-  },
-  {
-    title: 'Support',
-    items: [
-      { icon: '🎫', title: 'Help & Support', subtitle: 'Raise a support ticket', screen: 'SupportTickets', color: '#EAFAF1' },
-      { icon: 'ℹ️', title: 'About App', subtitle: 'Version 1.0.0', screen: 'AboutApp', color: '#EBF4FF' },
-      { icon: '📄', title: 'Privacy Policy', subtitle: 'Read our policy', screen: 'PrivacyPolicy', color: '#F5F5F5' },
-    ],
-  },
-];
+// ✅ Import kiya getRole ko storage se
+import { removeToken, getRole } from '../utils/storage';
 
 export default function SettingsScreen({ navigation }: any) {
+  const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const currentRole = await getRole(); // 'admin', 'mr', ya 'user'
+        setRole(currentRole);
+      } catch (error) {
+        console.log('Error fetching role in settings:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserRole();
+  }, []);
+
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
@@ -46,11 +37,78 @@ export default function SettingsScreen({ navigation }: any) {
     ]);
   };
 
-  // ✅ FIXED: Ab saare screens navigate karenge — koi "coming soon" nahi
   const handlePress = (screen: string | null) => {
     if (!screen) return;
     navigation.navigate(screen);
   };
+
+  // ✅ DYNAMIC GROUPS GENERATOR: Role ke hisab se menus badlenge
+  const getDynamicSettings = () => {
+    const groups = [
+      {
+        title: 'Account',
+        items: [
+          { icon: '👤', title: 'Edit Profile', subtitle: 'Update your personal info', screen: 'Profile', color: '#EEF2FF' },
+          { icon: '🔒', title: 'Change Password', subtitle: 'Keep your account secure', screen: 'ChangePassword', color: '#FFF0EF' },
+          { icon: '📱', title: 'Linked Devices', subtitle: 'Manage active sessions', screen: 'LinkedDevices', color: '#EAFAF1' },
+        ],
+      },
+    ];
+
+    // 🔥 ADMIN ONLY: Pure System ko control karne ke options
+    if (role === 'admin') {
+      groups.push({
+        title: 'Admin Console',
+        items: [
+          { icon: '⚙️', title: 'Global Configurations', subtitle: 'App settings & features', screen: 'AdminConfig', color: '#F4EFFF' },
+          { icon: '👥', title: 'User Management', subtitle: 'Manage users and representatives', screen: 'UserManagement', color: '#EBF4FF' },
+        ]
+      });
+    }
+
+    // ⚙️ PREFERENCES (Sab ke liye common)
+    groups.push({
+      title: 'Preferences',
+      items: [
+        { icon: '🔔', title: 'Notifications', subtitle: 'Manage alerts & reminders', screen: 'Notifications', color: '#FFF8EC' },
+        { icon: '🌐', title: 'Language', subtitle: 'English', screen: 'Language', color: '#EBF4FF' },
+        { icon: '🎨', title: 'Appearance', subtitle: 'Light mode', screen: 'Appearance', color: '#F4EFFF' },
+      ],
+    });
+
+    // 🎫 SUPPORT SECTION: Role ke mutabik text aur screen change hoga
+    let supportSubtitle = 'Raise a support ticket';
+    let supportTitle = 'Help & Support';
+
+    if (role === 'admin') {
+      supportTitle = 'Support Desk';
+      supportSubtitle = 'Resolve and assign tickets';
+    } else if (role === 'mr') {
+      supportTitle = 'Assigned Desk';
+      supportSubtitle = 'View client issues';
+    }
+
+    groups.push({
+      title: 'Support',
+      items: [
+        { icon: '🎫', title: supportTitle, subtitle: supportSubtitle, screen: 'SupportTickets', color: '#EAFAF1' },
+        { icon: 'ℹ️', title: 'About App', subtitle: 'Version 1.0.0', screen: 'AboutApp', color: '#EBF4FF' },
+        { icon: '📄', title: 'Privacy Policy', subtitle: 'Read our policy', screen: 'PrivacyPolicy', color: '#F5F5F5' },
+      ],
+    });
+
+    return groups;
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007BFF" />
+      </View>
+    );
+  }
+
+  const settingsGroups = getDynamicSettings();
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -58,7 +116,7 @@ export default function SettingsScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.headerRow}>
         <Text style={styles.pageTitle}>Settings</Text>
-        <Text style={styles.headerSub}>Manage your account</Text>
+        <Text style={styles.headerSub}>Manage your account ({role?.toUpperCase()})</Text>
       </View>
 
       {settingsGroups.map((group, gi) => (
@@ -106,6 +164,7 @@ export default function SettingsScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#F8F9FF', padding: 20, paddingBottom: 30 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FF' },
   headerRow: { marginBottom: 24 },
   pageTitle: { fontSize: 26, fontWeight: 'bold', color: '#1A1A2E' },
   headerSub: { fontSize: 13, color: '#9999B0', marginTop: 4 },

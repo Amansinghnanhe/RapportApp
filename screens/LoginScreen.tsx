@@ -5,7 +5,8 @@ import {
   KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native';
 import axios from 'axios';
-import { saveToken } from '../utils/storage';
+// Sahi path se storage function import kiya
+import { saveLoginSession } from '../utils/storage';
 
 const API_URL = 'http://192.168.29.108:5000/api/v1';
 
@@ -14,6 +15,9 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // 🔥 TESTING ROLE STATE: By default 'USER' rahega
+  const [selectedRole, setSelectedRole] = useState('USER'); 
 
   const handleLogin = async () => {
     if (!emailOrMobile || !password) {
@@ -27,9 +31,23 @@ export default function LoginScreen({ navigation }: any) {
         { emailOrMobile, password },
         { timeout: 10000 }
       );
+      
       const token = res.data.data.token;
-      await saveToken(token);
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+
+      // ✅ Storage file ke function ke sath token aur selected testing role save kiya
+      await saveLoginSession(token, selectedRole);
+      
+      Alert.alert('Login Success', `Logged in as ${selectedRole}`);
+      
+      // 🚀 Navigation Direction: Testing role ke basis par direct dashboards par redirect
+      if (selectedRole === 'ADMIN') {
+        navigation.reset({ index: 0, routes: [{ name: 'AdminDashboard' }] }); 
+      } else if (selectedRole === 'MR') {
+        navigation.reset({ index: 0, routes: [{ name: 'MRDashboard' }] });
+      } else {
+        navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      }
+
     } catch (error: any) {
       Alert.alert('Login Failed', error.response?.data?.message || 'Please check your network and try again');
     } finally {
@@ -41,6 +59,7 @@ export default function LoginScreen({ navigation }: any) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
 
+        {/* Header */}
         <View style={styles.headerContainer}>
           <View style={styles.logoCircle}>
             <Text style={styles.logoText}>👋</Text>
@@ -49,6 +68,7 @@ export default function LoginScreen({ navigation }: any) {
           <Text style={styles.subtitle}>Login to your account</Text>
         </View>
 
+        {/* Inputs Form */}
         <View style={styles.formContainer}>
           <Text style={styles.label}>Email or Mobile</Text>
           <View style={styles.inputContainer}>
@@ -84,11 +104,39 @@ export default function LoginScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
 
+          {/* 🔥 TESTING ROLE TABS: Isse select kiya hua role save hoga */}
+          <Text style={styles.label}>Select Session Role (Testing Only)</Text>
+          <View style={styles.roleTabContainer}>
+            {[
+              { id: 'USER', label: '👤 User' },
+              { id: 'MR', label: '📊 MR' },
+              { id: 'ADMIN', label: '👑 Admin' }
+            ].map((tab) => (
+              <TouchableOpacity
+                key={tab.id}
+                style={[
+                  styles.roleTab,
+                  selectedRole === tab.id && styles.roleTabActive
+                ]}
+                onPress={() => setSelectedRole(tab.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.roleTabText,
+                  selectedRole === tab.id && styles.roleTabTextActive
+                ]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <TouchableOpacity style={styles.forgotContainer}>
             <Text style={styles.forgotText}>Forgot Password?</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Login Button */}
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleLogin}
@@ -136,7 +184,7 @@ const styles = StyleSheet.create({
     marginBottom: 20, shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 5,
   },
-  label: { fontSize: 13, fontWeight: '600', color: '#555', marginBottom: 6, marginTop: 8 },
+  label: { fontSize: 13, fontWeight: '600', color: '#555', marginBottom: 6, marginTop: 12 },
   inputContainer: {
     flexDirection: 'row', alignItems: 'center',
     borderWidth: 1.5, borderColor: '#EBEBF5', borderRadius: 12,
@@ -145,7 +193,15 @@ const styles = StyleSheet.create({
   inputIcon: { fontSize: 16, marginRight: 8 },
   input: { flex: 1, paddingVertical: 14, fontSize: 15, color: '#333' },
   eyeIcon: { fontSize: 18, padding: 4 },
-  forgotContainer: { alignItems: 'flex-end', marginTop: 4 },
+  
+  // Role Tabs Styling
+  roleTabContainer: { flexDirection: 'row', backgroundColor: '#F0F2FA', borderRadius: 12, padding: 4, marginTop: 4, marginBottom: 8 },
+  roleTab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
+  roleTabActive: { backgroundColor: '#007BFF', elevation: 2, shadowColor: '#007BFF', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
+  roleTabText: { fontSize: 13, fontWeight: '600', color: '#666' },
+  roleTabTextActive: { color: '#fff', fontWeight: 'bold' },
+
+  forgotContainer: { alignItems: 'flex-end', marginTop: 8 },
   forgotText: { fontSize: 13, color: '#007BFF', fontWeight: '600' },
   button: {
     backgroundColor: '#007BFF', padding: 17, borderRadius: 14,

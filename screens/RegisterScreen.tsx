@@ -25,11 +25,16 @@ export default function RegisterScreen({ navigation }: any) {
     }
     try {
       setLoading(true);
+      
+      // ✅ FIXED: role field hata diya hai taaki backend validation bypass ho jaye
       const res = await axios.post(`${API_URL}/auth/register`, {
-        fullName: name, email, mobile,
+        fullName: name, 
+        email, 
+        mobile,
       });
+      
       const userId = res.data.data.userId;
-      Alert.alert('Success', 'OTP sent to your mobile!');
+      Alert.alert('Success', 'OTP sent! Please verify.');
       navigation.navigate('OTP', { userId });
     } catch (error: any) {
       Alert.alert('Registration Failed', error.response?.data?.message || 'Please try again');
@@ -42,6 +47,7 @@ export default function RegisterScreen({ navigation }: any) {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
 
+        {/* Header */}
         <View style={styles.headerContainer}>
           <View style={styles.logoCircle}>
             <Text style={styles.logoText}>✨</Text>
@@ -50,6 +56,7 @@ export default function RegisterScreen({ navigation }: any) {
           <Text style={styles.subtitle}>Join us — it's free!</Text>
         </View>
 
+        {/* Form Fields */}
         <View style={styles.formContainer}>
           {[
             { label: 'Full Name', icon: '👤', value: name, setter: setName, placeholder: 'Enter your full name', keyboardType: 'default' as const },
@@ -75,6 +82,7 @@ export default function RegisterScreen({ navigation }: any) {
           ))}
         </View>
 
+        {/* Register Button */}
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleRegister}
@@ -122,7 +130,7 @@ const styles = StyleSheet.create({
     marginBottom: 20, shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.07, shadowRadius: 12, elevation: 5,
   },
-  label: { fontSize: 13, fontWeight: '600', color: '#555', marginBottom: 6, marginTop: 8 },
+  label: { fontSize: 13, fontWeight: '600', color: '#555', marginBottom: 6, marginTop: 12 },
   inputContainer: {
     flexDirection: 'row', alignItems: 'center',
     borderWidth: 1.5, borderColor: '#EBEBF5', borderRadius: 12,

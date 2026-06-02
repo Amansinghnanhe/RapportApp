@@ -4,7 +4,7 @@ import {
   ActivityIndicator, TouchableOpacity, Alert
 } from 'react-native';
 import axios from 'axios';
-import { getToken, removeToken } from '../utils/storage';
+import { getToken } from '../utils/storage';
 
 const API_URL = 'http://192.168.29.108:5000/api/v1';
 
@@ -28,6 +28,34 @@ export default function ProfileScreen({ navigation }: any) {
     }
   };
 
+  // 🎨 helper function: Role ke hisab se styles aur content decide karne ke liye
+  const getRoleTheme = () => {
+    const role = profile?.role?.toLowerCase() || 'user';
+    
+    if (role === 'admin') {
+      return {
+        primaryColor: '#1A1A2E', // Elegant Dark Red/Black for Admin
+        roleLabel: '👑 SYSTEM ADMINISTRATOR',
+        badgeLabel: 'Super Admin Status'
+      };
+    }
+    if (role === 'mr') {
+      return {
+        primaryColor: '#2E7D32', // Professional Green for Field Force / MR
+        roleLabel: '📊 MARKET REPRESENTATIVE',
+        badgeLabel: 'Field Verified'
+      };
+    }
+    // Default User
+    return {
+      primaryColor: '#007BFF', // Classic Blue for Customers
+      roleLabel: '👤 APPMEMBER',
+      badgeLabel: 'Active Premium'
+    };
+  };
+
+  const theme = getRoleTheme();
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -37,31 +65,35 @@ export default function ProfileScreen({ navigation }: any) {
     );
   }
 
+  // Info items dynamic details ke sath
   const infoItems = [
-    { icon: '📧', label: 'Email', value: profile?.email || 'N/A' },
-    { icon: '📱', label: 'Mobile', value: profile?.mobile || 'N/A' },
-    { icon: '✅', label: 'Verified', value: profile?.isVerified ? 'Yes ✅' : 'No ❌' },
-    { icon: '🎭', label: 'Role', value: profile?.role || 'USER' },
-    { icon: '📅', label: 'Joined', value: profile?.createdAt ? new Date(profile.createdAt).toDateString() : 'N/A' },
+    { icon: '📧', label: 'Email Address', value: profile?.email || 'N/A' },
+    { icon: '📱', label: 'Mobile Number', value: profile?.mobile || 'N/A' },
+    { icon: '🛡️', label: 'Account Status', value: profile?.isVerified ? 'Verified Account ✅' : 'Pending Verification ❌' },
+    { icon: '🎭', label: 'Assigned Role', value: profile?.role?.toUpperCase() || 'USER' },
+    { icon: '📅', label: 'Account Created', value: profile?.createdAt ? new Date(profile.createdAt).toDateString() : 'N/A' },
   ];
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
 
-      <View style={styles.headerCard}>
+      {/* 🔴 DYNAMIC THEME HEADER CARD */}
+      <View style={[styles.headerCard, { backgroundColor: theme.primaryColor, shadowColor: theme.primaryColor }]}>
         <View style={styles.avatarCircle}>
           <Text style={styles.avatarInitial}>
             {profile?.fullName ? profile.fullName[0].toUpperCase() : '👤'}
           </Text>
         </View>
         <Text style={styles.name}>{profile?.fullName || 'User'}</Text>
-        <Text style={styles.role}>{profile?.role || 'USER'}</Text>
+        <Text style={styles.role}>{theme.roleLabel}</Text>
+        
         <View style={styles.activeBadge}>
           <View style={styles.activeDot} />
-          <Text style={styles.activeText}>Active</Text>
+          <Text style={styles.activeText}>{theme.badgeLabel}</Text>
         </View>
       </View>
 
+      {/* Info Sections Grid */}
       <View style={styles.infoContainer}>
         {infoItems.map((item, index) => (
           <View
@@ -77,8 +109,12 @@ export default function ProfileScreen({ navigation }: any) {
         ))}
       </View>
 
-      <TouchableOpacity style={styles.editButton} activeOpacity={0.8}>
-        <Text style={styles.editButtonText}>✏️  Edit Profile</Text>
+      {/* 🔴 DYNAMIC THEME EDIT BUTTON */}
+      <TouchableOpacity 
+        style={[styles.editButton, { backgroundColor: theme.primaryColor, shadowColor: theme.primaryColor }]} 
+        activeOpacity={0.8}
+      >
+        <Text style={styles.editButtonText}>✏️  Edit Profile Details</Text>
       </TouchableOpacity>
 
     </ScrollView>
@@ -90,9 +126,9 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FF' },
   loadingText: { marginTop: 10, color: '#888', fontSize: 14 },
   headerCard: {
-    backgroundColor: '#007BFF', borderRadius: 24, padding: 28,
+    borderRadius: 24, padding: 28,
     alignItems: 'center', marginBottom: 20, elevation: 10,
-    shadowColor: '#007BFF', shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35, shadowRadius: 14,
   },
   avatarCircle: {
@@ -103,7 +139,7 @@ const styles = StyleSheet.create({
   },
   avatarInitial: { fontSize: 38, color: '#fff', fontWeight: 'bold' },
   name: { fontSize: 22, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
-  role: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 12 },
+  role: { fontSize: 12, fontWeight: '700', color: 'rgba(255,255,255,0.85)', marginBottom: 12, letterSpacing: 1 },
   activeBadge: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -127,9 +163,9 @@ const styles = StyleSheet.create({
   infoLabel: { fontSize: 11, color: '#9999B0', marginBottom: 2, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
   infoValue: { fontSize: 15, fontWeight: '600', color: '#1A1A2E' },
   editButton: {
-    backgroundColor: '#007BFF', padding: 17, borderRadius: 14,
+    padding: 17, borderRadius: 14,
     alignItems: 'center', elevation: 8,
-    shadowColor: '#007BFF', shadowOffset: { width: 0, height: 6 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35, shadowRadius: 10,
   },
   editButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
