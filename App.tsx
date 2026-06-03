@@ -23,7 +23,7 @@ import AppearanceScreen from './screens/AppearanceScreen';
 import AboutAppScreen from './screens/AboutAppScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 
-// 🔥 NEW: Testing ke liye jo naye dashboards commands se bnaye hain unhe import kiya
+// Testing ke dashboards
 import AdminDashboard from './screens/AdminDashboard';
 import MRDashboard from './screens/MRDashboard';
 
@@ -44,9 +44,8 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   );
 }
 
-// Main Tabs Component
+// Main Tabs Component for Normal Users
 function MainTabs({ route }: any) {
-  // 🔥 FIXED: .toUpperCase() lagaya taaki 'admin', 'mr' ya 'ADMIN', 'MR' dono validation match ho jayein
   const rawRole = route.params?.role || 'USER';
   const userRole = rawRole.toUpperCase();
 
@@ -76,7 +75,7 @@ function MainTabs({ route }: any) {
       <Tab.Screen name="Profile" component={ProfileScreen} />
       <Tab.Screen name="Notifications" component={NotificationScreen} />
       
-      {/* 🔥 FIXED: Capital letters 'ADMIN' aur 'MR' check kiya */}
+      {/* Analytics dashboard access control */}
       {(userRole === 'ADMIN' || userRole === 'MR') && (
         <Tab.Screen name="Analytics" component={AnalyticsScreen} />
       )}
@@ -98,7 +97,7 @@ export default function App() {
     const userRole = await getRole(); 
     
     setIsLoggedIn(token !== null);
-    setRole(userRole);
+    setRole(userRole ? userRole.toUpperCase() : null);
     setIsLoading(false);
   };
 
@@ -113,28 +112,32 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
+        // 🚀 AUTOMATIC ROUTING: Agar login ho toh direct uske role wale module par bhejega
         initialRouteName={isLoggedIn ? 'Main' : 'Login'}
         screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
+        {/* Auth Screens */}
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="OTP" component={OTPScreen} />
         
-        {/* Main tabs stack: Isme role pass kar rahe hain */}
-        <Stack.Screen 
-          name="Main" 
-          component={MainTabs} 
-          initialParams={{ role: role }} 
-        />
+        {/* 🔥 INDUSTRIAL STRATEGY: Root screen selector based on role session */}
+        {role === 'ADMIN' ? (
+          <Stack.Screen name="Main" component={AdminDashboard} />
+        ) : role === 'MR' ? (
+          <Stack.Screen name="Main" component={MRDashboard} />
+        ) : (
+          <Stack.Screen name="Main" component={MainTabs} initialParams={{ role: role }} />
+        )}
         
-        {/* 🔥 NEW REGISTERED SCREENS: Login Screen ke redirect actions se ab ye direct link ho jayengi */}
+        {/* Fallback routes for dynamic transitions */}
         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
         <Stack.Screen name="MRDashboard" component={MRDashboard} />
         
         <Stack.Screen name="SupportTickets" component={SupportTicketListScreen} />
         <Stack.Screen name="CreateTicket" component={CreateTicketScreen} />
 
-        {/* Naye screens register */}
+        {/* Common Sub-screens */}
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
         <Stack.Screen name="LinkedDevices" component={LinkedDevicesScreen} />
         <Stack.Screen name="Language" component={LanguageScreen} />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, Alert, ActivityIndicator,
@@ -8,11 +8,41 @@ import axios from 'axios';
 
 const API_URL = 'http://192.168.29.108:5000/api/v1';
 
+// 🌟 DEV AUTO-FILL DATA: Tabs badalne par ye values automatically fill ho jayengi
+const DEV_REGISTER_DATA: Record<string, { name: string; email: string; mobile: string }> = {
+  USER: {
+    name: 'Aman User',
+    email: 'aman.user@test.com',
+    mobile: '9876543210'
+  },
+  MR: {
+    name: 'Aman MR',
+    email: 'aman.mr@test.com',
+    mobile: '8876543210'
+  },
+  ADMIN: {
+    name: 'Aman Admin',
+    email: 'aman.admin@test.com',
+    mobile: '7876543210'
+  }
+};
+
 export default function RegisterScreen({ navigation }: any) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('USER'); 
+
+  // 🌟 Auto-Fill Effect: Role change hote hi inputs update honge
+  useEffect(() => {
+    const defaultData = DEV_REGISTER_DATA[selectedRole];
+    if (defaultData) {
+      setName(defaultData.name);
+      setEmail(defaultData.email);
+      setMobile(defaultData.mobile);
+    }
+  }, [selectedRole]);
 
   const handleRegister = async () => {
     if (!name || !email || !mobile) {
@@ -23,19 +53,26 @@ export default function RegisterScreen({ navigation }: any) {
       Alert.alert('Error', 'Enter a valid 10-digit mobile number');
       return;
     }
+
     try {
       setLoading(true);
       
-      // ✅ FIXED: role field hata diya hai taaki backend validation bypass ho jaye
+      // ✅ Backend rules compliant payload (Sirf wahi data jo backend ko chahiye)
       const res = await axios.post(`${API_URL}/auth/register`, {
         fullName: name, 
-        email, 
-        mobile,
+        email: email.toLowerCase().trim(), 
+        mobile: mobile
       });
       
-      const userId = res.data.data.userId;
-      Alert.alert('Success', 'OTP sent! Please verify.');
-      navigation.navigate('OTP', { userId });
+      const userId = res.data.data.userId; 
+      Alert.alert('Success', `OTP sent for ${selectedRole} simulation!`);
+      
+      // OTP Screen par route params ke sath redirect
+      navigation.navigate('OTP', { 
+        userId: userId,
+        requestedRole: selectedRole 
+      });
+
     } catch (error: any) {
       Alert.alert('Registration Failed', error.response?.data?.message || 'Please try again');
     } finally {
@@ -53,33 +90,83 @@ export default function RegisterScreen({ navigation }: any) {
             <Text style={styles.logoText}>✨</Text>
           </View>
           <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join us — it's free!</Text>
+          <Text style={styles.subtitle}>Fill details and select profile type</Text>
         </View>
 
-        {/* Form Fields */}
+        {/* Inputs Form Container */}
         <View style={styles.formContainer}>
-          {[
-            { label: 'Full Name', icon: '👤', value: name, setter: setName, placeholder: 'Enter your full name', keyboardType: 'default' as const },
-            { label: 'Email Address', icon: '📧', value: email, setter: setEmail, placeholder: 'Enter your email', keyboardType: 'email-address' as const },
-            { label: 'Mobile Number', icon: '📱', value: mobile, setter: setMobile, placeholder: '10-digit mobile number', keyboardType: 'phone-pad' as const },
-          ].map((field, i) => (
-            <View key={i}>
-              <Text style={styles.label}>{field.label}</Text>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputIcon}>{field.icon}</Text>
-                <TextInput
-                  placeholder={field.placeholder}
-                  placeholderTextColor="#aaa"
-                  value={field.value}
-                  onChangeText={field.setter}
-                  style={styles.input}
-                  keyboardType={field.keyboardType}
-                  autoCapitalize="none"
-                  maxLength={field.keyboardType === 'phone-pad' ? 10 : undefined}
-                />
-              </View>
-            </View>
-          ))}
+          
+          {/* Full Name Input */}
+          <Text style={styles.label}>Full Name</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputIcon}>👤</Text>
+            <TextInput
+              placeholder="Enter your full name"
+              placeholderTextColor="#aaa"
+              value={name}
+              onChangeText={setName}
+              style={styles.input}
+              autoCapitalize="words"
+            />
+          </View>
+
+          {/* Email Input */}
+          <Text style={styles.label}>Email Address</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputIcon}>📧</Text>
+            <TextInput
+              placeholder="Enter email address"
+              placeholderTextColor="#aaa"
+              value={email}
+              onChangeText={setEmail}
+              style={styles.input}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* Mobile Input */}
+          <Text style={styles.label}>Mobile Number</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputIcon}>📱</Text>
+            <TextInput
+              placeholder="10-digit mobile number"
+              placeholderTextColor="#aaa"
+              value={mobile}
+              onChangeText={setMobile}
+              style={styles.input}
+              keyboardType="phone-pad"
+              maxLength={10}
+            />
+          </View>
+
+          {/* 🌟 ROLE SELECTION TABS (Ab fields ke NICHE aa gaya hai) */}
+          <Text style={styles.label}>I want to register as:</Text>
+          <View style={styles.roleTabContainer}>
+            {[
+              { id: 'USER', label: '👤 User' },
+              { id: 'MR', label: '📊 MR' },
+              { id: 'ADMIN', label: '👑 Admin' }
+            ].map((tab) => (
+              <TouchableOpacity
+                key={tab.id}
+                style={[
+                  styles.roleTab,
+                  selectedRole === tab.id && styles.roleTabActive
+                ]}
+                onPress={() => setSelectedRole(tab.id)}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.roleTabText,
+                  selectedRole === tab.id && styles.roleTabTextActive
+                ]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
         </View>
 
         {/* Register Button */}
@@ -91,7 +178,7 @@ export default function RegisterScreen({ navigation }: any) {
         >
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Register  →</Text>
+            : <Text style={styles.buttonText}>Register Simulation →</Text>
           }
         </TouchableOpacity>
 
@@ -115,7 +202,7 @@ export default function RegisterScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flexGrow: 1, backgroundColor: '#F8F9FF', padding: 24, justifyContent: 'center' },
-  headerContainer: { alignItems: 'center', marginBottom: 32 },
+  headerContainer: { alignItems: 'center', marginBottom: 24 },
   logoCircle: {
     width: 76, height: 76, borderRadius: 38,
     backgroundColor: '#007BFF', justifyContent: 'center', alignItems: 'center',
@@ -134,10 +221,15 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row', alignItems: 'center',
     borderWidth: 1.5, borderColor: '#EBEBF5', borderRadius: 12,
-    paddingHorizontal: 12, marginBottom: 4, backgroundColor: '#FAFBFF',
+    paddingHorizontal: 12, marginBottom: 8, backgroundColor: '#FAFBFF',
   },
   inputIcon: { fontSize: 16, marginRight: 8 },
   input: { flex: 1, paddingVertical: 14, fontSize: 15, color: '#333' },
+  roleTabContainer: { flexDirection: 'row', backgroundColor: '#F0F2FA', borderRadius: 12, padding: 4, marginTop: 4, marginBottom: 12 },
+  roleTab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
+  roleTabActive: { backgroundColor: '#007BFF', elevation: 2, shadowColor: '#007BFF', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
+  roleTabText: { fontSize: 13, fontWeight: '600', color: '#666' },
+  roleTabTextActive: { color: '#fff', fontWeight: 'bold' },
   button: {
     backgroundColor: '#007BFF', padding: 17, borderRadius: 14,
     alignItems: 'center', shadowColor: '#007BFF',

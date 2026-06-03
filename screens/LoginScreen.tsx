@@ -5,7 +5,6 @@ import {
   KeyboardAvoidingView, Platform, ScrollView
 } from 'react-native';
 import axios from 'axios';
-// Sahi path se storage function import kiya
 import { saveLoginSession } from '../utils/storage';
 
 const API_URL = 'http://192.168.29.108:5000/api/v1';
@@ -15,8 +14,6 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  
-  // 🔥 TESTING ROLE STATE: By default 'USER' rahega
   const [selectedRole, setSelectedRole] = useState('USER'); 
 
   const handleLogin = async () => {
@@ -24,6 +21,23 @@ export default function LoginScreen({ navigation }: any) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
+
+    // 🔒 FRONTEND RULE VALIDATION: Same email se multiple role execution block kiya
+    const emailLower = emailOrMobile.toLowerCase();
+    
+    if (selectedRole === 'ADMIN' && !emailLower.includes('admin')) {
+      Alert.alert('Access Denied', 'This email is not registered under an ADMIN profile.');
+      return;
+    }
+    if (selectedRole === 'MR' && !emailLower.includes('mr')) {
+      Alert.alert('Access Denied', 'This email is not registered under an MR profile.');
+      return;
+    }
+    if (selectedRole === 'USER' && (emailLower.includes('admin') || emailLower.includes('mr'))) {
+      Alert.alert('Role Conflict', 'Please select the correct role tab (MR or ADMIN) matching your email.');
+      return;
+    }
+
     try {
       setLoading(true);
       const res = await axios.post(
@@ -34,12 +48,12 @@ export default function LoginScreen({ navigation }: any) {
       
       const token = res.data.data.token;
 
-      // ✅ Storage file ke function ke sath token aur selected testing role save kiya
+      // Token and selected validated role session saved globals
       await saveLoginSession(token, selectedRole);
       
       Alert.alert('Login Success', `Logged in as ${selectedRole}`);
       
-      // 🚀 Navigation Direction: Testing role ke basis par direct dashboards par redirect
+      // Target dynamic redirection routing
       if (selectedRole === 'ADMIN') {
         navigation.reset({ index: 0, routes: [{ name: 'AdminDashboard' }] }); 
       } else if (selectedRole === 'MR') {
@@ -68,7 +82,7 @@ export default function LoginScreen({ navigation }: any) {
           <Text style={styles.subtitle}>Login to your account</Text>
         </View>
 
-        {/* Inputs Form */}
+        {/* Inputs Form Structuring */}
         <View style={styles.formContainer}>
           <Text style={styles.label}>Email or Mobile</Text>
           <View style={styles.inputContainer}>
@@ -81,8 +95,13 @@ export default function LoginScreen({ navigation }: any) {
               style={styles.input}
               autoCapitalize="none"
               keyboardType="email-address"
-              autoComplete="email"
-              textContentType="emailAddress"
+              
+              // 🔥 AGGRESSIVE AUTO-FILL TRUGGERS (Har baar suggestion lane ke liye)
+              autoFocus={true} // Screen khulte hi keyboard automatic upar aayega
+              selectTextOnFocus={true} // Focus hote hi text select hoga taaki popup window update ho sake
+              autoComplete={Platform.OS === 'android' ? 'username' : 'email'}
+              textContentType="username"
+              importantForAutofill="yes"
             />
           </View>
 
@@ -96,16 +115,20 @@ export default function LoginScreen({ navigation }: any) {
               onChangeText={setPassword}
               style={styles.input}
               secureTextEntry={!showPassword}
-              autoComplete="current-password"
+              
+              // 🔥 AGGRESSIVE AUTO-FILL TRUGGERS
+              selectTextOnFocus={true}
+              autoComplete={Platform.OS === 'android' ? 'current-password' : 'password'}
               textContentType="password"
+              importantForAutofill="yes"
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
               <Text style={styles.eyeIcon}>{showPassword ? '🙈' : '👁️'}</Text>
             </TouchableOpacity>
           </View>
 
-          {/* 🔥 TESTING ROLE TABS: Isse select kiya hua role save hoga */}
-          <Text style={styles.label}>Select Session Role (Testing Only)</Text>
+          {/* TESTING ROLE TABS */}
+          <Text style={styles.label}>Select Your Account Role</Text>
           <View style={styles.roleTabContainer}>
             {[
               { id: 'USER', label: '👤 User' },
@@ -143,10 +166,7 @@ export default function LoginScreen({ navigation }: any) {
           disabled={loading}
           activeOpacity={0.85}
         >
-          {loading
-            ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Login  →</Text>
-          }
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Login  →</Text>}
         </TouchableOpacity>
 
         <View style={styles.dividerContainer}>
@@ -193,14 +213,11 @@ const styles = StyleSheet.create({
   inputIcon: { fontSize: 16, marginRight: 8 },
   input: { flex: 1, paddingVertical: 14, fontSize: 15, color: '#333' },
   eyeIcon: { fontSize: 18, padding: 4 },
-  
-  // Role Tabs Styling
   roleTabContainer: { flexDirection: 'row', backgroundColor: '#F0F2FA', borderRadius: 12, padding: 4, marginTop: 4, marginBottom: 8 },
   roleTab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 8 },
   roleTabActive: { backgroundColor: '#007BFF', elevation: 2, shadowColor: '#007BFF', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
   roleTabText: { fontSize: 13, fontWeight: '600', color: '#666' },
   roleTabTextActive: { color: '#fff', fontWeight: 'bold' },
-
   forgotContainer: { alignItems: 'flex-end', marginTop: 8 },
   forgotText: { fontSize: 13, color: '#007BFF', fontWeight: '600' },
   button: {
