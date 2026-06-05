@@ -9,13 +9,11 @@ import LoginScreen from './screens/LoginScreen';
 import OTPScreen from './screens/OTPScreen';
 import HomeScreen from './screens/HomeScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import NotificationScreen from './screens/NotificationScreen';
 import SettingsScreen from './screens/SettingsScreen';
-import AnalyticsScreen from './screens/AnalyticsScreen';
-import SupportTicketListScreen from './screens/SupportTicketListScreen';
-import CreateTicketScreen from './screens/CreateTicketScreen';
+import MRDashboard from './screens/MRDashboard';
 
-// Naye screens import
+
+// Sub-screens
 import ChangePasswordScreen from './screens/ChangePasswordScreen';
 import LinkedDevicesScreen from './screens/LinkedDevicesScreen';
 import LanguageScreen from './screens/LanguageScreen';
@@ -23,19 +21,25 @@ import AppearanceScreen from './screens/AppearanceScreen';
 import AboutAppScreen from './screens/AboutAppScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
 
-// Testing ke dashboards
-import AdminDashboard from './screens/AdminDashboard';
-import MRDashboard from './screens/MRDashboard';
+// ✅ NEW: SIM Delivery MR Screens
+import RetailerListScreen from './screens/RetailerListScreen';
+import SIMActivationScreen from './screens/SIMActivationScreen';
+import KYCScreen from './screens/KYCScreen';
+import DailyTargetScreen from './screens/DailyTargetScreen';
+import VisitReportScreen from './screens/VisitReportScreen';
+import SupportTicketsScreen from './screens/SupportTicketsScreen';
 
-// Storage utility imports
-import { getToken, getRole } from './utils/storage';
+import { getToken } from './utils/storage';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// ── Bottom Tabs (MR ke liye) ──────────────────────────────
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const icons: Record<string, string> = {
-    Home: '🏠', Profile: '👤', Notifications: '🔔', Settings: '⚙️', Analytics: '📊',
+    Home: '🏠',
+    Profile: '👤',
+    Settings: '⚙️',
   };
   return (
     <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>
@@ -44,11 +48,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   );
 }
 
-// Main Tabs Component for Normal Users
-function MainTabs({ route }: any) {
-  const rawRole = route.params?.role || 'USER';
-  const userRole = rawRole.toUpperCase();
-
+function MRTabs() {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -59,7 +59,7 @@ function MainTabs({ route }: any) {
             {route.name}
           </Text>
         ),
-        tabBarActiveTintColor: '#007BFF',
+        tabBarActiveTintColor: '#3182CE',
         tabBarInactiveTintColor: '#B0B0C3',
         tabBarStyle: {
           backgroundColor: '#fff',
@@ -71,40 +71,30 @@ function MainTabs({ route }: any) {
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
-      <Tab.Screen name="Notifications" component={NotificationScreen} />
-      
-      {/* Analytics dashboard access control */}
-      {(userRole === 'ADMIN' || userRole === 'MR') && (
-        <Tab.Screen name="Analytics" component={AnalyticsScreen} />
-      )}
-      
+      <Tab.Screen name="Home"     component={HomeScreen}    />
+      <Tab.Screen name="Profile"  component={ProfileScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );
 }
 
+// ── Main App ──────────────────────────────────────────────
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [role, setRole] = useState<string | null>(null); 
 
   useEffect(() => { checkLogin(); }, []);
 
   const checkLogin = async () => {
     const token = await getToken();
-    const userRole = await getRole(); 
-    
     setIsLoggedIn(token !== null);
-    setRole(userRole ? userRole.toUpperCase() : null);
     setIsLoading(false);
   };
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FF' }}>
-        <ActivityIndicator size="large" color="#007BFF" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F4FF' }}>
+        <ActivityIndicator size="large" color="#3182CE" />
       </View>
     );
   }
@@ -112,38 +102,35 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        // 🚀 AUTOMATIC ROUTING: Agar login ho toh direct uske role wale module par bhejega
         initialRouteName={isLoggedIn ? 'Main' : 'Login'}
         screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
-        {/* Auth Screens */}
+        {/* ── Auth Screens ── */}
+        <Stack.Screen name="Login"    component={LoginScreen}    />
         <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="OTP" component={OTPScreen} />
-        
-        {/* 🔥 INDUSTRIAL STRATEGY: Root screen selector based on role session */}
-        {role === 'ADMIN' ? (
-          <Stack.Screen name="Main" component={AdminDashboard} />
-        ) : role === 'MR' ? (
-          <Stack.Screen name="Main" component={MRDashboard} />
-        ) : (
-          <Stack.Screen name="Main" component={MainTabs} initialParams={{ role: role }} />
-        )}
-        
-        {/* Fallback routes for dynamic transitions */}
-        <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
-        <Stack.Screen name="MRDashboard" component={MRDashboard} />
-        
-        <Stack.Screen name="SupportTickets" component={SupportTicketListScreen} />
-        <Stack.Screen name="CreateTicket" component={CreateTicketScreen} />
+        <Stack.Screen name="OTP"      component={OTPScreen}      />
 
-        {/* Common Sub-screens */}
+        {/* ── MR Main App (Bottom Tabs) ── */}
+        <Stack.Screen name="Main" component={MRTabs} />
+
+        {/* ── MR Dashboard ── */}
+        <Stack.Screen name="MRDashboard" component={MRDashboard} />
+
+        {/* ── ✅ NEW: SIM Delivery Screens ── */}
+        <Stack.Screen name="RetailerList"  component={RetailerListScreen}  />
+        <Stack.Screen name="SIMActivation" component={SIMActivationScreen} />
+        <Stack.Screen name="KYC"           component={KYCScreen}           />
+        <Stack.Screen name="DailyTarget"   component={DailyTargetScreen}   />
+        <Stack.Screen name="VisitReport"   component={VisitReportScreen}   />
+
+        {/* ── Common Sub-screens ── */}
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-        <Stack.Screen name="LinkedDevices" component={LinkedDevicesScreen} />
-        <Stack.Screen name="Language" component={LanguageScreen} />
-        <Stack.Screen name="Appearance" component={AppearanceScreen} />
-        <Stack.Screen name="AboutApp" component={AboutAppScreen} />
-        <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+        <Stack.Screen name="LinkedDevices"  component={LinkedDevicesScreen}  />
+        <Stack.Screen name="Language"       component={LanguageScreen}       />
+        <Stack.Screen name="Appearance"     component={AppearanceScreen}     />
+        <Stack.Screen name="AboutApp"       component={AboutAppScreen}       />
+        <Stack.Screen name="PrivacyPolicy"  component={PrivacyPolicyScreen}  />
+        <Stack.Screen name="SupportTickets" component={SupportTicketsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

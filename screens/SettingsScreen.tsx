@@ -3,25 +3,24 @@ import {
   View, Text, StyleSheet, ScrollView,
   TouchableOpacity, Alert, ActivityIndicator
 } from 'react-native';
-// ✅ Import kiya getRole ko storage se
 import { removeToken, getRole } from '../utils/storage';
 
 export default function SettingsScreen({ navigation }: any) {
-  const [role, setRole] = useState<string | null>(null);
+  const [role, setRole]       = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUserRole = async () => {
+    const init = async () => {
       try {
-        const currentRole = await getRole(); // 'admin', 'mr', ya 'user'
-        setRole(currentRole);
-      } catch (error) {
-        console.log('Error fetching role in settings:', error);
+        const r = await getRole();
+        setRole(r);
+      } catch (e) {
+        console.log('Role fetch error:', e);
       } finally {
         setLoading(false);
       }
     };
-    fetchUserRole();
+    init();
   }, []);
 
   const handleLogout = () => {
@@ -32,68 +31,201 @@ export default function SettingsScreen({ navigation }: any) {
         onPress: async () => {
           await removeToken();
           navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-        }
-      }
+        },
+      },
     ]);
   };
 
-  const handlePress = (screen: string | null) => {
+  const go = (screen: string | null) => {
     if (!screen) return;
     navigation.navigate(screen);
   };
 
-  // ✅ DYNAMIC GROUPS GENERATOR: Role ke hisab se menus badlenge
-  const getDynamicSettings = () => {
-    const groups = [
-      {
-        title: 'Account',
-        items: [
-          { icon: '👤', title: 'Edit Profile', subtitle: 'Update your personal info', screen: 'Profile', color: '#EEF2FF' },
-          { icon: '🔒', title: 'Change Password', subtitle: 'Keep your account secure', screen: 'ChangePassword', color: '#FFF0EF' },
-          { icon: '📱', title: 'Linked Devices', subtitle: 'Manage active sessions', screen: 'LinkedDevices', color: '#EAFAF1' },
-        ],
-      },
-    ];
+  const getGroups = () => {
+    const groups: {
+      title: string;
+      items: {
+        icon: string;
+        title: string;
+        subtitle: string;
+        screen: string | null;
+        color: string;
+        badge?: string;
+      }[];
+    }[] = [];
 
-    // 🔥 ADMIN ONLY: Pure System ko control karne ke options
-    if (role === 'admin') {
-      groups.push({
-        title: 'Admin Console',
-        items: [
-          { icon: '⚙️', title: 'Global Configurations', subtitle: 'App settings & features', screen: 'AdminConfig', color: '#F4EFFF' },
-          { icon: '👥', title: 'User Management', subtitle: 'Manage users and representatives', screen: 'UserManagement', color: '#EBF4FF' },
-        ]
-      });
-    }
-
-    // ⚙️ PREFERENCES (Sab ke liye common)
+    // ── 1. ACCOUNT ──
     groups.push({
-      title: 'Preferences',
+      title: '👤 Account',
       items: [
-        { icon: '🔔', title: 'Notifications', subtitle: 'Manage alerts & reminders', screen: 'Notifications', color: '#FFF8EC' },
-        { icon: '🌐', title: 'Language', subtitle: 'English', screen: 'Language', color: '#EBF4FF' },
-        { icon: '🎨', title: 'Appearance', subtitle: 'Light mode', screen: 'Appearance', color: '#F4EFFF' },
+        {
+          icon: '👤',
+          title: 'My Profile',
+          subtitle: 'Name, phone, photo update karo',
+          screen: 'Profile',
+          color: '#EEF2FF',
+        },
+        {
+          icon: '🔒',
+          title: 'Change Password',
+          subtitle: 'Account secure rakho',
+          screen: 'ChangePassword',
+          color: '#FFF0EF',
+        },
+        {
+          icon: '📱',
+          title: 'Linked Devices',
+          subtitle: 'Active sessions dekho',
+          screen: 'LinkedDevices',
+          color: '#EAFAF1',
+        },
       ],
     });
 
-    // 🎫 SUPPORT SECTION: Role ke mutabik text aur screen change hoga
-    let supportSubtitle = 'Raise a support ticket';
-    let supportTitle = 'Help & Support';
-
-    if (role === 'admin') {
-      supportTitle = 'Support Desk';
-      supportSubtitle = 'Resolve and assign tickets';
-    } else if (role === 'mr') {
-      supportTitle = 'Assigned Desk';
-      supportSubtitle = 'View client issues';
+    // ── 2. MR WORK SETTINGS (only for MR role) ──
+    if (role === 'mr' || role === null) {
+      groups.push({
+        title: '💼 Work Settings',
+        items: [
+          {
+            icon: '🎯',
+            title: 'Daily Target',
+            subtitle: 'Apna aaj ka SIM target dekho',
+            screen: 'DailyTarget',
+            color: '#F4EFFF',
+          },
+          {
+            icon: '🏪',
+            title: 'My Retailers',
+            subtitle: 'Assigned retailers ki list',
+            screen: 'RetailerList',
+            color: '#EBF4FF',
+          },
+          {
+            icon: '📝',
+            title: 'Visit Reports',
+            subtitle: 'Apni visits ka record dekho',
+            screen: 'VisitReport',
+            color: '#EAFAF1',
+          },
+          {
+            icon: '📋',
+            title: 'KYC Pending',
+            subtitle: 'Incomplete KYC forms complete karo',
+            screen: 'KYC',
+            color: '#FFF8EC',
+            badge: '3',
+          },
+          {
+            icon: '📱',
+            title: 'SIM Activation',
+            subtitle: 'New SIM activate karo',
+            screen: 'SIMActivation',
+            color: '#EAFAF1',
+          },
+        ],
+      });
     }
 
+    // ── 3. ADMIN CONSOLE (only admin) ──
+    if (role === 'admin') {
+      groups.push({
+        title: '⚙️ Admin Console',
+        items: [
+          {
+            icon: '⚙️',
+            title: 'Global Config',
+            subtitle: 'App settings & features',
+            screen: 'AdminConfig',
+            color: '#F4EFFF',
+          },
+          {
+            icon: '👥',
+            title: 'User Management',
+            subtitle: 'Users aur MRs manage karo',
+            screen: 'UserManagement',
+            color: '#EBF4FF',
+          },
+        ],
+      });
+    }
+
+    // ── 4. NOTIFICATIONS ──
     groups.push({
-      title: 'Support',
+      title: '🔔 Notifications',
       items: [
-        { icon: '🎫', title: supportTitle, subtitle: supportSubtitle, screen: 'SupportTickets', color: '#EAFAF1' },
-        { icon: 'ℹ️', title: 'About App', subtitle: 'Version 1.0.0', screen: 'AboutApp', color: '#EBF4FF' },
-        { icon: '📄', title: 'Privacy Policy', subtitle: 'Read our policy', screen: 'PrivacyPolicy', color: '#F5F5F5' },
+        {
+          icon: '🔔',
+          title: 'Visit Reminders',
+          subtitle: 'Daily visit alerts on/off',
+          screen: null,
+          color: '#FFF8EC',
+        },
+        {
+          icon: '📊',
+          title: 'Target Alerts',
+          subtitle: 'Target pura hone par notify karo',
+          screen: null,
+          color: '#EBF4FF',
+        },
+        {
+          icon: '💬',
+          title: 'KYC Reminders',
+          subtitle: 'Pending KYC notifications',
+          screen: null,
+          color: '#FFF0EF',
+        },
+      ],
+    });
+
+    // ── 5. PREFERENCES ──
+    groups.push({
+      title: '🎨 Preferences',
+      items: [
+        {
+          icon: '🌐',
+          title: 'Language',
+          subtitle: 'English',
+          screen: 'Language',
+          color: '#EBF4FF',
+        },
+        {
+          icon: '🎨',
+          title: 'Appearance',
+          subtitle: 'Light / Dark mode',
+          screen: 'Appearance',
+          color: '#F4EFFF',
+        },
+      ],
+    });
+
+    // ── 6. SUPPORT ──
+    groups.push({
+      title: '🎫 Support',
+      items: [
+        {
+          icon: '🎫',
+          title: role === 'admin' ? 'Support Desk' : 'Help & Support',
+          subtitle: role === 'admin'
+            ? 'Resolve and assign tickets'
+            : 'Koi problem? Ticket raise karo',
+          screen: 'SupportTickets',
+          color: '#EAFAF1',
+        },
+        {
+          icon: 'ℹ️',
+          title: 'About App',
+          subtitle: 'Version 1.0.0',
+          screen: 'AboutApp',
+          color: '#EBF4FF',
+        },
+        {
+          icon: '📄',
+          title: 'Privacy Policy',
+          subtitle: 'Hamari policy padho',
+          screen: 'PrivacyPolicy',
+          color: '#F5F5F5',
+        },
       ],
     });
 
@@ -102,101 +234,169 @@ export default function SettingsScreen({ navigation }: any) {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007BFF" />
+      <View style={s.loadingBox}>
+        <ActivityIndicator size="large" color="#3182CE" />
       </View>
     );
   }
 
-  const settingsGroups = getDynamicSettings();
+  const groups = getGroups();
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-
-      {/* Header */}
-      <View style={styles.headerRow}>
-        <Text style={styles.pageTitle}>Settings</Text>
-        <Text style={styles.headerSub}>Manage your account ({role?.toUpperCase()})</Text>
+    <ScrollView
+      contentContainerStyle={s.container}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── HEADER ── */}
+      <View style={s.header}>
+        <View style={s.headerLeft}>
+          <Text style={s.pageTitle}>Settings</Text>
+          <Text style={s.headerSub}>
+            {role === 'admin' ? '⚙️ Admin Account' : '💼 MR Account'}
+          </Text>
+        </View>
+        <View style={s.roleBadge}>
+          <Text style={s.roleBadgeText}>
+            {role?.toUpperCase() ?? 'MR'}
+          </Text>
+        </View>
       </View>
 
-      {settingsGroups.map((group, gi) => (
-        <View key={gi} style={styles.groupContainer}>
-          <Text style={styles.groupTitle}>{group.title}</Text>
-          <View style={styles.groupCard}>
+      {/* ── MR INFO CARD ── */}
+      {(role === 'mr' || role === null) && (
+        <View style={s.mrCard}>
+          <View style={s.mrCardLeft}>
+            <View style={s.mrAvatar}>
+              <Text style={{ fontSize: 26 }}>👨‍💼</Text>
+            </View>
+            <View>
+              <Text style={s.mrCardName}>Medical Representative</Text>
+              <Text style={s.mrCardSub}>Zone: North Delhi</Text>
+            </View>
+          </View>
+          <View style={s.mrStatRow}>
+            <View style={s.mrStat}>
+              <Text style={s.mrStatVal}>24</Text>
+              <Text style={s.mrStatLbl}>Retailers</Text>
+            </View>
+            <View style={s.mrStatDivider} />
+            <View style={s.mrStat}>
+              <Text style={s.mrStatVal}>32</Text>
+              <Text style={s.mrStatLbl}>Activated</Text>
+            </View>
+            <View style={s.mrStatDivider} />
+            <View style={s.mrStat}>
+              <Text style={[s.mrStatVal, { color: '#E53E3E' }]}>3</Text>
+              <Text style={s.mrStatLbl}>KYC Left</Text>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* ── SETTINGS GROUPS ── */}
+      {groups.map((group, gi) => (
+        <View key={gi} style={s.groupContainer}>
+          <Text style={s.groupTitle}>{group.title}</Text>
+          <View style={s.groupCard}>
             {group.items.map((item, ii) => (
               <TouchableOpacity
                 key={ii}
                 style={[
-                  styles.settingRow,
-                  ii < group.items.length - 1 && styles.settingRowBorder
+                  s.row,
+                  ii < group.items.length - 1 && s.rowBorder,
                 ]}
-                activeOpacity={0.7}
-                onPress={() => handlePress(item.screen)}
+                activeOpacity={item.screen ? 0.7 : 1}
+                onPress={() => go(item.screen)}
               >
-                <View style={[styles.iconBox, { backgroundColor: item.color }]}>
-                  <Text style={styles.settingIcon}>{item.icon}</Text>
+                <View style={[s.iconBox, { backgroundColor: item.color }]}>
+                  <Text style={s.icon}>{item.icon}</Text>
                 </View>
-                <View style={styles.settingContent}>
-                  <Text style={styles.settingTitle}>{item.title}</Text>
-                  <Text style={styles.settingSubtitle}>{item.subtitle}</Text>
+                <View style={s.rowContent}>
+                  <Text style={s.rowTitle}>{item.title}</Text>
+                  <Text style={s.rowSub}>{item.subtitle}</Text>
                 </View>
-                <Text style={styles.arrow}>›</Text>
+                {item.badge ? (
+                  <View style={s.badge}>
+                    <Text style={s.badgeText}>{item.badge}</Text>
+                  </View>
+                ) : item.screen ? (
+                  <Text style={s.arrow}>›</Text>
+                ) : (
+                  <Text style={s.comingSoon}>Soon</Text>
+                )}
               </TouchableOpacity>
             ))}
           </View>
         </View>
       ))}
 
-      {/* App Version */}
-      <View style={styles.versionBox}>
-        <Text style={styles.versionText}>RapportApp v1.0.0</Text>
-        <Text style={styles.versionSub}>Made with ❤️ by Aman</Text>
+      {/* ── VERSION ── */}
+      <View style={s.versionBox}>
+        <Text style={s.versionText}>RapportApp v1.0.0</Text>
+        <Text style={s.versionSub}>Made with ❤️ by Aman</Text>
       </View>
 
-      {/* Logout */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
-        <Text style={styles.logoutText}>🚪  Logout</Text>
+      {/* ── LOGOUT ── */}
+      <TouchableOpacity
+        style={s.logoutBtn}
+        onPress={handleLogout}
+        activeOpacity={0.85}
+      >
+        <Text style={s.logoutText}>🚪  Logout</Text>
       </TouchableOpacity>
 
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: '#F8F9FF', padding: 20, paddingBottom: 30 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FF' },
-  headerRow: { marginBottom: 24 },
-  pageTitle: { fontSize: 26, fontWeight: 'bold', color: '#1A1A2E' },
-  headerSub: { fontSize: 13, color: '#9999B0', marginTop: 4 },
+const s = StyleSheet.create({
+  container:  { flexGrow: 1, backgroundColor: '#F0F4FF', padding: 20, paddingBottom: 36 },
+  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F4FF' },
+
+  // Header
+  header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  headerLeft:   {},
+  pageTitle:    { fontSize: 28, fontWeight: '800', color: '#1A1A2E' },
+  headerSub:    { fontSize: 13, color: '#9999B0', marginTop: 4 },
+  roleBadge:    { backgroundColor: '#1A56DB', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  roleBadgeText:{ color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  // MR Info Card
+  mrCard:       { backgroundColor: '#1A56DB', borderRadius: 20, padding: 18, marginBottom: 24, elevation: 8, shadowColor: '#1A56DB', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12 },
+  mrCardLeft:   { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 14 },
+  mrAvatar:     { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  mrCardName:   { fontSize: 16, fontWeight: '700', color: '#fff' },
+  mrCardSub:    { fontSize: 12, color: 'rgba(255,255,255,0.72)', marginTop: 3 },
+  mrStatRow:    { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 14, padding: 14 },
+  mrStat:       { flex: 1, alignItems: 'center' },
+  mrStatVal:    { fontSize: 20, fontWeight: '800', color: '#fff' },
+  mrStatLbl:    { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  mrStatDivider:{ width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
+
+  // Groups
   groupContainer: { marginBottom: 20 },
-  groupTitle: {
-    fontSize: 12, fontWeight: '700', color: '#9999B0',
-    textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 4,
-  },
-  groupCard: {
-    backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden',
-    elevation: 4, shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8,
-  },
-  settingRow: { flexDirection: 'row', alignItems: 'center', padding: 14 },
-  settingRowBorder: { borderBottomWidth: 1, borderBottomColor: '#F4F4FA' },
-  iconBox: {
-    width: 42, height: 42, borderRadius: 12,
-    justifyContent: 'center', alignItems: 'center', marginRight: 14,
-  },
-  settingIcon: { fontSize: 20 },
-  settingContent: { flex: 1 },
-  settingTitle: { fontSize: 15, fontWeight: '600', color: '#1A1A2E' },
-  settingSubtitle: { fontSize: 12, color: '#9999B0', marginTop: 2 },
-  arrow: { fontSize: 22, color: '#D0D0E0' },
-  versionBox: { alignItems: 'center', marginVertical: 16 },
+  groupTitle:     { fontSize: 12, fontWeight: '700', color: '#9999B0', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
+  groupCard:      { backgroundColor: '#fff', borderRadius: 20, overflow: 'hidden', elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+
+  // Row
+  row:        { flexDirection: 'row', alignItems: 'center', padding: 14 },
+  rowBorder:  { borderBottomWidth: 1, borderBottomColor: '#F4F4FA' },
+  iconBox:    { width: 44, height: 44, borderRadius: 13, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  icon:       { fontSize: 20 },
+  rowContent: { flex: 1 },
+  rowTitle:   { fontSize: 15, fontWeight: '600', color: '#1A1A2E' },
+  rowSub:     { fontSize: 12, color: '#9999B0', marginTop: 2 },
+  arrow:      { fontSize: 22, color: '#D0D0E0' },
+  badge:      { backgroundColor: '#E53E3E', borderRadius: 20, paddingHorizontal: 9, paddingVertical: 3 },
+  badgeText:  { color: '#fff', fontSize: 12, fontWeight: '700' },
+  comingSoon: { fontSize: 10, color: '#B0B0C8', fontWeight: '600', backgroundColor: '#F4F4FA', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+
+  // Version
+  versionBox:  { alignItems: 'center', marginVertical: 18 },
   versionText: { fontSize: 13, color: '#9999B0', fontWeight: '600' },
-  versionSub: { fontSize: 12, color: '#C0C0D0', marginTop: 4 },
-  logoutButton: {
-    backgroundColor: '#FF3B30', padding: 17, borderRadius: 14,
-    alignItems: 'center', elevation: 8, marginTop: 4,
-    shadowColor: '#FF3B30', shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35, shadowRadius: 10,
-  },
-  logoutText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  versionSub:  { fontSize: 12, color: '#C0C0D0', marginTop: 4 },
+
+  // Logout
+  logoutBtn:  { backgroundColor: '#E53E3E', padding: 17, borderRadius: 16, alignItems: 'center', elevation: 8, shadowColor: '#E53E3E', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 10 },
+  logoutText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });
