@@ -11,6 +11,8 @@ import HomeScreen from './screens/HomeScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import MRDashboard from './screens/MRDashboard';
+import CheckoutScreen from './screens/CheckoutScreen';
+import OrderSuccessScreen from './screens/OrderSuccessScreen';
 
 
 // Sub-screens
@@ -131,6 +133,8 @@ export default function App() {
         <Stack.Screen name="AboutApp"       component={AboutAppScreen}       />
         <Stack.Screen name="PrivacyPolicy"  component={PrivacyPolicyScreen}  />
         <Stack.Screen name="SupportTickets" component={SupportTicketsScreen} />
+        <Stack.Screen name="Checkout" component={CheckoutScreen} />
+        <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
