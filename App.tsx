@@ -30,6 +30,7 @@ import KYCScreen from './screens/KYCScreen';
 import DailyTargetScreen from './screens/DailyTargetScreen';
 import VisitReportScreen from './screens/VisitReportScreen';
 import SupportTicketsScreen from './screens/SupportTicketsScreen';
+import LocationTrackingScreen from './screens/LocationTrackingScreen';
 
 import { getToken } from './utils/storage';
 
@@ -135,6 +136,7 @@ export default function App() {
         <Stack.Screen name="SupportTickets" component={SupportTicketsScreen} />
         <Stack.Screen name="Checkout" component={CheckoutScreen} />
         <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
+        <Stack.Screen name="LocationTracking" component={LocationTrackingScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

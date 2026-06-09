@@ -10,7 +10,6 @@ import Svg, { Path, Circle, Ellipse } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
 
-// ── THEME TOKENS ──
 const THEMES = {
   light: {
     bg:           '#EEF2FF',
@@ -44,11 +43,9 @@ const THEMES = {
   },
 };
 
-// ── BACKGROUND WAVES COMPONENT ──
 function BackgroundWaves({ isDark, T }: { isDark: boolean; T: typeof THEMES.light }) {
   return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
-      {/* Top-left large wave blob */}
       <Svg width={width} height={320} style={{ position: 'absolute', top: -40, left: 0 }}>
         <Path
           d={`M0,80 C${width*0.25},160 ${width*0.5},0 ${width},80 L${width},0 L0,0 Z`}
@@ -62,7 +59,6 @@ function BackgroundWaves({ isDark, T }: { isDark: boolean; T: typeof THEMES.ligh
         />
       </Svg>
 
-      {/* Bottom wave */}
       <Svg width={width} height={220} style={{ position: 'absolute', bottom: 0, left: 0 }}>
         <Path
           d={`M0,100 C${width*0.2},40 ${width*0.55},160 ${width},80 L${width},220 L0,220 Z`}
@@ -76,7 +72,6 @@ function BackgroundWaves({ isDark, T }: { isDark: boolean; T: typeof THEMES.ligh
         />
       </Svg>
 
-      {/* Floating subtle circles */}
       <Svg width={width} height={height} style={StyleSheet.absoluteFillObject}>
         <Circle cx={width * 0.85} cy={height * 0.22} r={90} fill={T.wave1} opacity={isDark ? 0.18 : 0.22} />
         <Circle cx={width * 0.1}  cy={height * 0.45} r={60} fill={T.wave2} opacity={isDark ? 0.12 : 0.15} />
@@ -90,7 +85,7 @@ function BackgroundWaves({ isDark, T }: { isDark: boolean; T: typeof THEMES.ligh
 
 export default function HomeScreen({ navigation }: any) {
   const [loading,  setLoading]  = useState(true);
-  const [mrName,   setMrName]   = useState('Medical Rep');
+  const [mrName,   setMrName]   = useState('SIM DELIVERY MANAGEMENT');
   const [time,     setTime]     = useState('');
   const [isDark,   setIsDark]   = useState(false);
 
@@ -164,6 +159,7 @@ export default function HomeScreen({ navigation }: any) {
     { icon: '⏳', val: `${todayStats.pendingKYC}`,    lbl: 'Pending KYC',   color: '#DC2626' },
   ];
 
+  // ✅ NEW ORDER BUTTON ADDED
   const actions = [
     { icon: '🏪', label: 'Retailers',    screen: 'RetailerList',  grad: ['#1D4ED8','#3B82F6'] as const },
     { icon: '📱', label: 'Activate SIM', screen: 'SIMActivation', grad: ['#15803D','#22C55E'] as const },
@@ -171,6 +167,9 @@ export default function HomeScreen({ navigation }: any) {
     { icon: '🎯', label: 'My Targets',   screen: 'DailyTarget',   grad: ['#6D28D9','#A78BFA'] as const },
     { icon: '📝', label: 'Visit Report', screen: 'VisitReport',   grad: ['#B91C1C','#F87171'] as const },
     { icon: '👤', label: 'Profile',      screen: 'Profile',       grad: ['#0F766E','#2DD4BF'] as const },
+    { icon: '🛒', label: 'New Order',    screen: 'Checkout',      grad: ['#BE185D','#F472B6'] as const },
+    { icon: '📍', label: 'My Location',  screen: 'LocationTracking',  grad: ['#0369A1','#38BDF8'] as const },
+    
   ];
 
   const activity = [
@@ -195,7 +194,6 @@ export default function HomeScreen({ navigation }: any) {
     <Animated.View style={{ flex: 1, backgroundColor: T.bg, opacity: themeFade }}>
       <StatusBar barStyle="light-content" backgroundColor="#1A3A7A" />
 
-      {/* ── BACKGROUND WAVES ── */}
       <BackgroundWaves isDark={isDark} T={T} />
 
       <ScrollView
@@ -212,8 +210,7 @@ export default function HomeScreen({ navigation }: any) {
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={s.headerCard}
           >
-            {/* Inner wave decoration on header */}
-            <Svg width="100%" height={60} style={s.headerWaveDeco} >
+            <Svg width="100%" height={60} style={s.headerWaveDeco}>
               <Path
                 d={`M0,30 C${width*0.25},60 ${width*0.5},0 ${width},30 L${width},60 L0,60 Z`}
                 fill="rgba(255,255,255,0.06)"
@@ -249,7 +246,6 @@ export default function HomeScreen({ navigation }: any) {
 
             <View style={s.divider} />
 
-            {/* Progress */}
             <View style={s.progressBox}>
               <View style={s.progressLabelRow}>
                 <Text style={s.progressLabel}>🎯 Today's Target Progress</Text>
@@ -270,7 +266,6 @@ export default function HomeScreen({ navigation }: any) {
               </View>
             </View>
 
-            {/* Pills */}
             <View style={s.pillsRow}>
               <View style={s.pill}><Text style={s.pillText}>🏪 {todayStats.totalRetailers} Retailers</Text></View>
               <View style={s.pill}><Text style={s.pillText}>📊 On Track</Text></View>
@@ -319,14 +314,25 @@ export default function HomeScreen({ navigation }: any) {
                 key={i}
                 style={s.actionCard}
                 activeOpacity={0.82}
-                onPress={() => a.screen && navigation.navigate(a.screen)}
+                // ✅ UPDATED ONPRESS WITH CHECKOUT NAVIGATION
+                onPress={() => {
+                  if (!a.screen) return;
+                  if (a.screen === 'Checkout') {
+                    navigation.navigate('Checkout', {
+                      cartItems: [
+                        { planId: '6650abc123def456789', name: 'Basic SIM Plan', quantity: 1 },
+                      ],
+                    });
+                  } else {
+                    navigation.navigate(a.screen);
+                  }
+                }}
               >
                 <LinearGradient
                   colors={a.grad}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                   style={s.actionGrad}
                 >
-                  {/* mini wave inside action card */}
                   <Svg width="100%" height={30} style={s.actionWaveDeco}>
                     <Path
                       d={`M0,15 C30,28 60,2 100,15 L100,30 L0,30 Z`}
@@ -375,7 +381,6 @@ const s = StyleSheet.create({
   loadingBox:  { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 14 },
   loadingText: { fontSize: 14, fontWeight: '500' },
 
-  // Header
   headerCard:     { borderRadius: 28, padding: 22, marginBottom: 16, elevation: 16, shadowColor: '#1A3A7A', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.45, shadowRadius: 22, overflow: 'hidden' },
   headerWaveDeco: { position: 'absolute', bottom: 0, left: 0, right: 0 },
   headerTop:      { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
@@ -390,7 +395,6 @@ const s = StyleSheet.create({
   dateText:       { fontSize: 12, color: 'rgba(255,255,255,0.68)', marginBottom: 14 },
   divider:        { height: 1, backgroundColor: 'rgba(255,255,255,0.15)', marginBottom: 14 },
 
-  // Progress
   progressBox:      { backgroundColor: 'rgba(255,255,255,0.11)', borderRadius: 18, padding: 14, marginBottom: 14 },
   progressLabelRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   progressLabel:    { fontSize: 13, color: '#fff', fontWeight: '600' },
@@ -399,12 +403,10 @@ const s = StyleSheet.create({
   progressFill:     { height: 12, borderRadius: 6, overflow: 'hidden' },
   progressSub:      { fontSize: 11, color: 'rgba(255,255,255,0.68)' },
 
-  // Pills
   pillsRow: { flexDirection: 'row', gap: 10, marginTop: 4 },
   pill:     { backgroundColor: 'rgba(255,255,255,0.14)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
   pillText: { color: '#fff', fontSize: 12, fontWeight: '600' },
 
-  // Alert
   alertBanner:   { flexDirection: 'row', alignItems: 'center', borderRadius: 16, padding: 14, marginBottom: 16, borderWidth: 1.5, elevation: 3, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.1, shadowRadius: 8 },
   alertIconBox:  { width: 46, height: 46, borderRadius: 14, backgroundColor: '#FED7D7', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   alertTitle:    { fontSize: 14, fontWeight: '700', color: '#B91C1C' },
@@ -412,7 +414,6 @@ const s = StyleSheet.create({
   alertArrowBox: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center' },
   alertArrow:    { fontSize: 16, color: '#DC2626', fontWeight: '700' },
 
-  // Stats
   sectionTitle: { fontSize: 15, fontWeight: '700', marginBottom: 12, marginTop: 6, letterSpacing: 0.2 },
   statsGrid:    { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 16, marginHorizontal: -5 },
   statCard:     { width: (width - 52) / 2, margin: 5, borderRadius: 20, padding: 18, alignItems: 'center', elevation: 3, borderWidth: 1, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
@@ -420,7 +421,6 @@ const s = StyleSheet.create({
   statVal:      { fontSize: 28, fontWeight: '900', marginBottom: 4, letterSpacing: -1 },
   statLbl:      { fontSize: 11, fontWeight: '600', textAlign: 'center' },
 
-  // Actions
   actionsGrid:    { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20, marginHorizontal: -5 },
   actionCard:     { width: (width - 52) / 2, margin: 5, borderRadius: 20, overflow: 'hidden', elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.18, shadowRadius: 10 },
   actionGrad:     { padding: 22, alignItems: 'center', overflow: 'hidden' },
@@ -428,7 +428,6 @@ const s = StyleSheet.create({
   actionIcon:     { fontSize: 32, marginBottom: 10 },
   actionLabel:    { fontSize: 13, fontWeight: '700', color: '#fff', letterSpacing: 0.2 },
 
-  // Activity
   activityCard: { borderRadius: 20, paddingVertical: 4, marginBottom: 24, elevation: 4, borderWidth: 1, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10 },
   activityRow:  { flexDirection: 'row', alignItems: 'center', padding: 14 },
   activityDot:  { width: 42, height: 42, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 12 },

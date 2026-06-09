@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = 'http://192.168.1.100:3000/api/v1'; // apna IP yahan daalo
+const BASE_URL = 'http://192.168.1.5:3000/api/v1';
 
 const getHeaders = async () => {
   const token = await AsyncStorage.getItem('token');
@@ -9,6 +9,8 @@ const getHeaders = async () => {
     Authorization: `Bearer ${token}`,
   };
 };
+
+// ── ORDER APIs ──────────────────────────────────────────
 
 export const createCheckoutSession = async (
   items: { planId: string; quantity: number }[],
@@ -54,6 +56,30 @@ export const updateOrderStatus = async (orderId: string, status: string) => {
 
 export const getUserAddresses = async () => {
   const res = await fetch(`${BASE_URL}/address`, {
+    headers: await getHeaders(),
+  });
+  return res.json();
+};
+
+// ── LOCATION APIs ───────────────────────────────────────
+
+export const updateMRLocation = async (lat: number, lng: number) => {
+  const res = await fetch(`${BASE_URL}/mr/location`, {
+    method: 'POST',
+    headers: await getHeaders(),
+    body: JSON.stringify({
+      lat,
+      lng,
+      speed: 0,
+      isMockLocation: false,
+    }),
+  });
+  return res.json();
+};
+
+export const toggleMROnline = async () => {
+  const res = await fetch(`${BASE_URL}/mr/toggle-online`, {
+    method: 'PATCH',
     headers: await getHeaders(),
   });
   return res.json();
