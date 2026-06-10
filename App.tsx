@@ -13,6 +13,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import MRDashboard from './screens/MRDashboard';
 import CheckoutScreen from './screens/CheckoutScreen';
 import OrderSuccessScreen from './screens/OrderSuccessScreen';
+import AnalyticsScreen from './screens/AnalyticsScreen';
 
 
 // Sub-screens
@@ -137,6 +138,7 @@ export default function App() {
         <Stack.Screen name="Checkout" component={CheckoutScreen} />
         <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
         <Stack.Screen name="LocationTracking" component={LocationTrackingScreen} />
+        <Stack.Screen name="Analytics" component={AnalyticsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

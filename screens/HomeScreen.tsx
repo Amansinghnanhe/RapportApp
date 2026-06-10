@@ -169,6 +169,7 @@ export default function HomeScreen({ navigation }: any) {
     { icon: '👤', label: 'Profile',      screen: 'Profile',       grad: ['#0F766E','#2DD4BF'] as const },
     { icon: '🛒', label: 'New Order',    screen: 'Checkout',      grad: ['#BE185D','#F472B6'] as const },
     { icon: '📍', label: 'My Location',  screen: 'LocationTracking',  grad: ['#0369A1','#38BDF8'] as const },
+    { icon: '📊', label: 'Analytics', screen: 'Analytics', grad: ['#6D28D9','#A78BFA'] as const },
     
   ];
 
