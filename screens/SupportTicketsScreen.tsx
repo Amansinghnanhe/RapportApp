@@ -5,8 +5,7 @@ import {
 } from 'react-native';
 import { getToken } from '../utils/storage';
 
-// ✅ FIXED: Correct API URL
-const API_URL = 'http://192.168.1.5:3000/api/v1';
+const API_URL = 'http://192.168.1.5:3000/api/v1/admin';
 
 type Ticket = {
   _id: string;
@@ -42,17 +41,16 @@ export default function SupportTicketsScreen({ navigation }: any) {
 
   const fetchTickets = async () => {
     try {
-      // ✅ FIXED: /tickets endpoint (admin nahi)
       const res = await authFetch(`${API_URL}/tickets`, { method: 'GET' });
       const contentType = res.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
         const data = await res.json();
         setTickets(data.data || []);
       } else {
-        Alert.alert('Error', 'Server se unexpected response mila.');
+        Alert.alert('Error', 'Unexpected response from server.');
       }
     } catch (e) {
-      Alert.alert('Error', 'Tickets fetch karne mein dikkat aayi.');
+      Alert.alert('Error', 'Failed to fetch tickets.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -63,12 +61,11 @@ export default function SupportTicketsScreen({ navigation }: any) {
 
   const handleCreate = async () => {
     if (!title.trim() || !description.trim()) {
-      Alert.alert('Error', 'Title aur description dono bharo');
+      Alert.alert('Error', 'Please fill in title and description');
       return;
     }
     setSubmitting(true);
     try {
-      // ✅ FIXED: /tickets endpoint
       const res = await authFetch(`${API_URL}/tickets`, {
         method: 'POST',
         body: JSON.stringify({ title, description }),
@@ -77,19 +74,19 @@ export default function SupportTicketsScreen({ navigation }: any) {
       if (contentType && contentType.includes('application/json')) {
         const data = await res.json();
         if (res.ok) {
-          Alert.alert('✅ Done', 'Ticket successfully create ho gayi!');
+          Alert.alert('✅ Success', 'Ticket created successfully!');
           setTitle('');
           setDescription('');
           setShowCreate(false);
           fetchTickets();
         } else {
-          Alert.alert('Error', data.message || 'Kuch galat hua');
+          Alert.alert('Error', data.message || 'Something went wrong');
         }
       } else {
-        Alert.alert('Server Error', 'Ticket route nahi mila ya token invalid hai.');
+        Alert.alert('Server Error', 'Route not found or token is invalid.');
       }
     } catch (e) {
-      Alert.alert('Error', 'Server se connect nahi ho pa raha');
+      Alert.alert('Error', 'Unable to connect to server');
     } finally {
       setSubmitting(false);
     }
@@ -99,7 +96,6 @@ export default function SupportTicketsScreen({ navigation }: any) {
     if (!replyText.trim()) return;
     setSubmitting(true);
     try {
-      // ✅ FIXED: /tickets/:id/reply endpoint
       const res = await authFetch(`${API_URL}/tickets/reply/${ticketId}`, {
         method: 'POST',
         body: JSON.stringify({ message: replyText }),
@@ -118,20 +114,19 @@ export default function SupportTicketsScreen({ navigation }: any) {
         Alert.alert('Error', 'Server issue while replying');
       }
     } catch (e) {
-      Alert.alert('Error', 'Reply nahi ho payi');
+      Alert.alert('Error', 'Failed to send reply');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleClose = async (ticketId: string) => {
-    Alert.alert('Ticket Close', 'Kya issue resolve ho gaya?', [
+    Alert.alert('Close Ticket', 'Has your issue been resolved?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Close Karo', style: 'destructive',
+        text: 'Yes, Close It', style: 'destructive',
         onPress: async () => {
           try {
-            // ✅ FIXED: /tickets/close/:id endpoint
             const res = await authFetch(
               `${API_URL}/tickets/close/${ticketId}`,
               { method: 'PATCH' }
@@ -140,10 +135,10 @@ export default function SupportTicketsScreen({ navigation }: any) {
               setShowDetail(null);
               fetchTickets();
             } else {
-              Alert.alert('Error', 'Close request fail ho gayi');
+              Alert.alert('Error', 'Failed to close ticket');
             }
           } catch (e) {
-            Alert.alert('Error', 'Close nahi ho payi');
+            Alert.alert('Error', 'Could not close ticket');
           }
         },
       },
@@ -193,10 +188,10 @@ export default function SupportTicketsScreen({ navigation }: any) {
         {tickets.length === 0 ? (
           <View style={st.emptyBox}>
             <Text style={{ fontSize: 48 }}>🎫</Text>
-            <Text style={st.emptyTitle}>Koi ticket nahi hai</Text>
-            <Text style={st.emptySub}>Koi problem ho toh naya ticket banao</Text>
+            <Text style={st.emptyTitle}>No tickets yet</Text>
+            <Text style={st.emptySub}>Raise a ticket if you have any issue</Text>
             <TouchableOpacity style={st.emptyBtn} onPress={() => setShowCreate(true)}>
-              <Text style={st.emptyBtnText}>+ Ticket Banao</Text>
+              <Text style={st.emptyBtnText}>+ Create Ticket</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -234,12 +229,12 @@ export default function SupportTicketsScreen({ navigation }: any) {
         <View style={st.modalOverlay}>
           <View style={st.modalBox}>
             <Text style={st.modalTitle}>🎫 New Ticket</Text>
-            <Text style={st.modalSub}>Apni problem describe karo</Text>
+            <Text style={st.modalSub}>Describe your issue</Text>
 
             <Text style={st.label}>Title *</Text>
             <TextInput
               style={st.input}
-              placeholder="Problem ka short title"
+              placeholder="Enter issue title"
               value={title}
               onChangeText={setTitle}
               maxLength={80}
@@ -248,7 +243,7 @@ export default function SupportTicketsScreen({ navigation }: any) {
             <Text style={st.label}>Description *</Text>
             <TextInput
               style={[st.input, st.textarea]}
-              placeholder="Poori problem detail mein likho..."
+              placeholder="Describe your problem in detail..."
               value={description}
               onChangeText={setDescription}
               multiline
@@ -324,7 +319,7 @@ export default function SupportTicketsScreen({ navigation }: any) {
                   <Text style={st.label}>Add Reply</Text>
                   <TextInput
                     style={[st.input, st.textarea]}
-                    placeholder="Reply likho..."
+                    placeholder="Write your reply..."
                     value={replyText}
                     onChangeText={setReplyText}
                     multiline
@@ -338,7 +333,7 @@ export default function SupportTicketsScreen({ navigation }: any) {
                   >
                     {submitting
                       ? <ActivityIndicator color="#fff" size="small" />
-                      : <Text style={st.submitBtnText}>Reply Bhejo</Text>
+                      : <Text style={st.submitBtnText}>Send Reply</Text>
                     }
                   </TouchableOpacity>
                 </View>
@@ -357,7 +352,7 @@ export default function SupportTicketsScreen({ navigation }: any) {
                   style={[st.submitBtn, { backgroundColor: '#E53E3E' }]}
                   onPress={() => showDetail && handleClose(showDetail._id)}
                 >
-                  <Text style={st.submitBtnText}>Issue Resolved ✅</Text>
+                  <Text style={st.submitBtnText}>Mark Resolved ✅</Text>
                 </TouchableOpacity>
               )}
             </View>

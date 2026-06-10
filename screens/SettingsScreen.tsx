@@ -1,14 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Alert, ActivityIndicator
+  TouchableOpacity, Alert, ActivityIndicator, Switch,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { removeToken, getRole } from '../utils/storage';
+
+// ─── Toggle key type ──────────────────────────────────────────────────────────
+type ToggleKey = 'visitReminder' | 'targetAlert' | 'kycReminder';
 
 export default function SettingsScreen({ navigation }: any) {
   const [role, setRole]       = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // ── Notification toggles ──
+  const [notifToggles, setNotifToggles] = useState<Record<ToggleKey, boolean>>({
+    visitReminder: false,
+    targetAlert:   false,
+    kycReminder:   false,
+  });
+
+  // ── Load role ──
   useEffect(() => {
     const init = async () => {
       try {
@@ -22,6 +34,30 @@ export default function SettingsScreen({ navigation }: any) {
     };
     init();
   }, []);
+
+  // ── Load saved toggles from AsyncStorage ──
+  useEffect(() => {
+    const loadToggles = async () => {
+      try {
+        const saved = await AsyncStorage.getItem('notif_toggles');
+        if (saved) setNotifToggles(JSON.parse(saved));
+      } catch (e) {
+        console.log('Toggle load error:', e);
+      }
+    };
+    loadToggles();
+  }, []);
+
+  // ── Save toggle and update state ──
+  const handleToggle = async (key: ToggleKey) => {
+    const updated = { ...notifToggles, [key]: !notifToggles[key] };
+    setNotifToggles(updated);
+    try {
+      await AsyncStorage.setItem('notif_toggles', JSON.stringify(updated));
+    } catch (e) {
+      console.log('Toggle save error:', e);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -51,6 +87,7 @@ export default function SettingsScreen({ navigation }: any) {
         screen: string | null;
         color: string;
         badge?: string;
+        toggleKey?: ToggleKey;   // ← NEW
       }[];
     }[] = [];
 
@@ -150,7 +187,7 @@ export default function SettingsScreen({ navigation }: any) {
       });
     }
 
-    // ── 4. NOTIFICATIONS ──
+    // ── 4. NOTIFICATIONS — toggleKey add kiya ──
     groups.push({
       title: '🔔 Notifications',
       items: [
@@ -160,6 +197,7 @@ export default function SettingsScreen({ navigation }: any) {
           subtitle: 'Daily visit alerts on/off',
           screen: null,
           color: '#FFF8EC',
+          toggleKey: 'visitReminder',   // ← NEW
         },
         {
           icon: '📊',
@@ -167,6 +205,7 @@ export default function SettingsScreen({ navigation }: any) {
           subtitle: 'Target pura hone par notify karo',
           screen: null,
           color: '#EBF4FF',
+          toggleKey: 'targetAlert',     // ← NEW
         },
         {
           icon: '💬',
@@ -174,6 +213,7 @@ export default function SettingsScreen({ navigation }: any) {
           subtitle: 'Pending KYC notifications',
           screen: null,
           color: '#FFF0EF',
+          toggleKey: 'kycReminder',     // ← NEW
         },
       ],
     });
@@ -305,8 +345,11 @@ export default function SettingsScreen({ navigation }: any) {
                   s.row,
                   ii < group.items.length - 1 && s.rowBorder,
                 ]}
-                activeOpacity={item.screen ? 0.7 : 1}
-                onPress={() => go(item.screen)}
+                activeOpacity={item.toggleKey ? 1 : item.screen ? 0.7 : 1}
+                onPress={() => {
+                  if (item.toggleKey) return;   // toggle pe navigate mat karo
+                  go(item.screen);
+                }}
               >
                 <View style={[s.iconBox, { backgroundColor: item.color }]}>
                   <Text style={s.icon}>{item.icon}</Text>
@@ -315,10 +358,19 @@ export default function SettingsScreen({ navigation }: any) {
                   <Text style={s.rowTitle}>{item.title}</Text>
                   <Text style={s.rowSub}>{item.subtitle}</Text>
                 </View>
+
+                {/* ── RIGHT SIDE: badge / switch / arrow / soon ── */}
                 {item.badge ? (
                   <View style={s.badge}>
                     <Text style={s.badgeText}>{item.badge}</Text>
                   </View>
+                ) : item.toggleKey ? (
+                  <Switch
+                    value={notifToggles[item.toggleKey]}
+                    onValueChange={() => handleToggle(item.toggleKey!)}
+                    trackColor={{ false: '#D1D5DB', true: '#1A56DB' }}
+                    thumbColor="#ffffff"
+                  />
                 ) : item.screen ? (
                   <Text style={s.arrow}>›</Text>
                 ) : (
@@ -354,24 +406,24 @@ const s = StyleSheet.create({
   loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F4FF' },
 
   // Header
-  header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  headerLeft:   {},
-  pageTitle:    { fontSize: 28, fontWeight: '800', color: '#1A1A2E' },
-  headerSub:    { fontSize: 13, color: '#9999B0', marginTop: 4 },
-  roleBadge:    { backgroundColor: '#1A56DB', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
-  roleBadgeText:{ color: '#fff', fontSize: 13, fontWeight: '700' },
+  header:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  headerLeft:    {},
+  pageTitle:     { fontSize: 28, fontWeight: '800', color: '#1A1A2E' },
+  headerSub:     { fontSize: 13, color: '#9999B0', marginTop: 4 },
+  roleBadge:     { backgroundColor: '#1A56DB', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 8 },
+  roleBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 
   // MR Info Card
-  mrCard:       { backgroundColor: '#1A56DB', borderRadius: 20, padding: 18, marginBottom: 24, elevation: 8, shadowColor: '#1A56DB', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12 },
-  mrCardLeft:   { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 14 },
-  mrAvatar:     { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
-  mrCardName:   { fontSize: 16, fontWeight: '700', color: '#fff' },
-  mrCardSub:    { fontSize: 12, color: 'rgba(255,255,255,0.72)', marginTop: 3 },
-  mrStatRow:    { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 14, padding: 14 },
-  mrStat:       { flex: 1, alignItems: 'center' },
-  mrStatVal:    { fontSize: 20, fontWeight: '800', color: '#fff' },
-  mrStatLbl:    { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  mrStatDivider:{ width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
+  mrCard:        { backgroundColor: '#1A56DB', borderRadius: 20, padding: 18, marginBottom: 24, elevation: 8, shadowColor: '#1A56DB', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12 },
+  mrCardLeft:    { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 14 },
+  mrAvatar:      { width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  mrCardName:    { fontSize: 16, fontWeight: '700', color: '#fff' },
+  mrCardSub:     { fontSize: 12, color: 'rgba(255,255,255,0.72)', marginTop: 3 },
+  mrStatRow:     { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 14, padding: 14 },
+  mrStat:        { flex: 1, alignItems: 'center' },
+  mrStatVal:     { fontSize: 20, fontWeight: '800', color: '#fff' },
+  mrStatLbl:     { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
+  mrStatDivider: { width: 1, backgroundColor: 'rgba(255,255,255,0.2)' },
 
   // Groups
   groupContainer: { marginBottom: 20 },
