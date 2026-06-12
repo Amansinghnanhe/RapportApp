@@ -1,14 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const BASE_URL = 'http://192.168.1.5:3000/api/v1';
-
-const getHeaders = async () => {
-  const token = await AsyncStorage.getItem('token');
-  return {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-  };
-};
+// utils/orderApi.ts
+// ✅ FIX: Now uses the shared `api` axios instance (with token interceptor)
+//         instead of raw fetch() with hardcoded IPs.
+import api from './api';
 
 // ── ORDER APIs ──────────────────────────────────────────
 
@@ -16,12 +9,8 @@ export const createCheckoutSession = async (
   items: { planId: string; quantity: number }[],
   orderType = 'NORMAL'
 ) => {
-  const res = await fetch(`${BASE_URL}/checkout-session`, {
-    method: 'POST',
-    headers: await getHeaders(),
-    body: JSON.stringify({ items, orderType }),
-  });
-  return res.json();
+  const res = await api.post('/checkout-session', { items, orderType });
+  return res.data;
 };
 
 export const createOrder = async (body: {
@@ -30,143 +19,94 @@ export const createOrder = async (body: {
   paymentMethod: 'COD' | 'UPI' | 'ONLINE' | 'NETBANKING';
   orderType?: string;
 }) => {
-  const res = await fetch(`${BASE_URL}/orders`, {
-    method: 'POST',
-    headers: await getHeaders(),
-    body: JSON.stringify(body),
-  });
-  return res.json();
+  const res = await api.post('/orders', body);
+  return res.data;
 };
 
 export const getMROrders = async (view: 'active' | 'history' = 'active') => {
-  const res = await fetch(`${BASE_URL}/orders/mr/assigned?view=${view}`, {
-    headers: await getHeaders(),
-  });
-  return res.json();
+  const res = await api.get(`/orders/mr/assigned?view=${view}`);
+  return res.data;
 };
 
 export const updateOrderStatus = async (orderId: string, status: string) => {
-  const res = await fetch(`${BASE_URL}/orders/${orderId}/status/mr`, {
-    method: 'PATCH',
-    headers: await getHeaders(),
-    body: JSON.stringify({ status }),
-  });
-  return res.json();
+  const res = await api.patch(`/orders/${orderId}/status/mr`, { status });
+  return res.data;
 };
 
 export const getUserAddresses = async () => {
-  const res = await fetch(`${BASE_URL}/address`, {
-    headers: await getHeaders(),
-  });
-  return res.json();
+  const res = await api.get('/address');
+  return res.data;
 };
 
 // ── LOCATION APIs ───────────────────────────────────────
 
 export const updateMRLocation = async (lat: number, lng: number) => {
-  const res = await fetch(`${BASE_URL}/mr/location`, {
-    method: 'POST',
-    headers: await getHeaders(),
-    body: JSON.stringify({
-      lat,
-      lng,
-      speed: 0,
-      isMockLocation: false,
-    }),
+  const res = await api.post('/mr/location', {
+    lat,
+    lng,
+    speed: 0,
+    isMockLocation: false,
   });
-  return res.json();
+  return res.data;
 };
 
 export const toggleMROnline = async () => {
-  const res = await fetch(`${BASE_URL}/mr/toggle-online`, {
-    method: 'PATCH',
-    headers: await getHeaders(),
-  });
-  return res.json();
+  const res = await api.patch('/mr/toggle-online');
+  return res.data;
 };
 
 // ── KYC APIs ────────────────────────────────────────────
 
 export const sendAadhaarOtp = async (aadhaar: string) => {
-  const res = await fetch(`${BASE_URL}/kyc/aadhaar/send-otp`, {
-    method: 'POST',
-    headers: await getHeaders(),
-    body: JSON.stringify({ aadhaar }),
-  });
-  return res.json();
+  const res = await api.post('/kyc/aadhaar/send-otp', { aadhaar });
+  return res.data;
 };
 
 export const verifyAadhaarOtp = async (refId: string, otp: string) => {
-  const res = await fetch(`${BASE_URL}/kyc/aadhaar/verify-otp`, {
-    method: 'POST',
-    headers: await getHeaders(),
-    body: JSON.stringify({ refId, otp }),
-  });
-  return res.json();
+  const res = await api.post('/kyc/aadhaar/verify-otp', { refId, otp });
+  return res.data;
 };
 
 export const verifyPan = async (pan: string) => {
-  const res = await fetch(`${BASE_URL}/kyc/pan/verify`, {
-    method: 'POST',
-    headers: await getHeaders(),
-    body: JSON.stringify({ pan }),
-  });
-  return res.json();
+  const res = await api.post('/kyc/pan/verify', { pan });
+  return res.data;
 };
 
 export const verifyBank = async (account: string, ifsc: string) => {
-  const res = await fetch(`${BASE_URL}/kyc/bank/verify`, {
-    method: 'POST',
-    headers: await getHeaders(),
-    body: JSON.stringify({ account, ifsc }),
-  });
-  return res.json();
+  const res = await api.post('/kyc/bank/verify', { account, ifsc });
+  return res.data;
 };
 
 export const getMyKyc = async () => {
-  const res = await fetch(`${BASE_URL}/kyc/me`, {
-    headers: await getHeaders(),
-  });
-  return res.json();
+  const res = await api.get('/kyc/me');
+  return res.data;
 };
 
 // ── SUPPORT TICKET APIs ─────────────────────────────────
 
 export const createTicket = async (title: string, description: string) => {
-  const res = await fetch(`${BASE_URL}/tickets`, {
-    method: 'POST',
-    headers: await getHeaders(),
-    body: JSON.stringify({ title, description }),
-  });
-  return res.json();
+  const res = await api.post('/tickets', { title, description });
+  return res.data;
 };
 
 export const getMyTickets = async () => {
-  const res = await fetch(`${BASE_URL}/tickets`, {
-    headers: await getHeaders(),
-  });
-  return res.json();
+  const res = await api.get('/tickets');
+  return res.data;
 };
 
 // ── ANALYTICS APIs ──────────────────────────────────────
 
 export const getDashboardSummary = async () => {
-  const res = await fetch(`${BASE_URL}/analytics/dashboard-summary`, {
-    headers: await getHeaders(),
-  });
-  return res.json();
+  const res = await api.get('/analytics/dashboard-summary');
+  return res.data;
 };
 
 export const getSalesTrend = async () => {
-  const res = await fetch(`${BASE_URL}/analytics/sales-trend`, {
-    headers: await getHeaders(),
-  });
-  return res.json();
+  const res = await api.get('/analytics/sales-trend');
+  return res.data;
 };
 
 export const getMRPerformance = async () => {
-  const res = await fetch(`${BASE_URL}/analytics/mr-performance`, {
-    headers: await getHeaders(),
-  });
-  return res.json();
+  const res = await api.get('/analytics/mr-performance');
+  return res.data;
 };

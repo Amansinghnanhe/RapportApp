@@ -1,11 +1,13 @@
+// screens/SupportTicketsScreen.tsx
+// ✅ FIX: Was using hardcoded 'http://192.168.1.5:3000' (wrong IP/port).
+//         Now uses the shared `api` axios instance from utils/api.ts.
+
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   TextInput, Alert, ActivityIndicator, Modal, RefreshControl
 } from 'react-native';
-import { getToken } from '../utils/storage';
-
-const API_URL = 'http://192.168.1.5:3000/api/v1/admin';
+import api from '../utils/api';
 
 type Ticket = {
   _id: string;
@@ -27,30 +29,13 @@ export default function SupportTicketsScreen({ navigation }: any) {
   const [replyText,   setReplyText]   = useState('');
   const [submitting,  setSubmitting]  = useState(false);
 
-  const authFetch = async (url: string, options: any = {}) => {
-    const token = await getToken();
-    return fetch(url, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...options.headers,
-      },
-    });
-  };
-
   const fetchTickets = async () => {
     try {
-      const res = await authFetch(`${API_URL}/tickets`, { method: 'GET' });
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await res.json();
-        setTickets(data.data || []);
-      } else {
-        Alert.alert('Error', 'Unexpected response from server.');
-      }
-    } catch (e) {
-      Alert.alert('Error', 'Failed to fetch tickets.');
+      // ✅ FIX: uses shared api instance (correct IP, correct port, with token)
+      const res = await api.get('/tickets');
+      setTickets(res.data?.data || []);
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'Failed to fetch tickets.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -66,27 +51,14 @@ export default function SupportTicketsScreen({ navigation }: any) {
     }
     setSubmitting(true);
     try {
-      const res = await authFetch(`${API_URL}/tickets`, {
-        method: 'POST',
-        body: JSON.stringify({ title, description }),
-      });
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await res.json();
-        if (res.ok) {
-          Alert.alert('✅ Success', 'Ticket created successfully!');
-          setTitle('');
-          setDescription('');
-          setShowCreate(false);
-          fetchTickets();
-        } else {
-          Alert.alert('Error', data.message || 'Something went wrong');
-        }
-      } else {
-        Alert.alert('Server Error', 'Route not found or token is invalid.');
-      }
-    } catch (e) {
-      Alert.alert('Error', 'Unable to connect to server');
+      await api.post('/tickets', { title, description });
+      Alert.alert('✅ Success', 'Ticket created successfully!');
+      setTitle('');
+      setDescription('');
+      setShowCreate(false);
+      fetchTickets();
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'Something went wrong');
     } finally {
       setSubmitting(false);
     }
@@ -96,25 +68,12 @@ export default function SupportTicketsScreen({ navigation }: any) {
     if (!replyText.trim()) return;
     setSubmitting(true);
     try {
-      const res = await authFetch(`${API_URL}/tickets/reply/${ticketId}`, {
-        method: 'POST',
-        body: JSON.stringify({ message: replyText }),
-      });
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await res.json();
-        if (res.ok) {
-          setReplyText('');
-          setShowDetail(data.data);
-          fetchTickets();
-        } else {
-          Alert.alert('Error', data.message);
-        }
-      } else {
-        Alert.alert('Error', 'Server issue while replying');
-      }
-    } catch (e) {
-      Alert.alert('Error', 'Failed to send reply');
+      const res = await api.post(`/tickets/reply/${ticketId}`, { message: replyText });
+      setReplyText('');
+      setShowDetail(res.data?.data || null);
+      fetchTickets();
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'Failed to send reply');
     } finally {
       setSubmitting(false);
     }
@@ -127,18 +86,11 @@ export default function SupportTicketsScreen({ navigation }: any) {
         text: 'Yes, Close It', style: 'destructive',
         onPress: async () => {
           try {
-            const res = await authFetch(
-              `${API_URL}/tickets/close/${ticketId}`,
-              { method: 'PATCH' }
-            );
-            if (res.ok) {
-              setShowDetail(null);
-              fetchTickets();
-            } else {
-              Alert.alert('Error', 'Failed to close ticket');
-            }
-          } catch (e) {
-            Alert.alert('Error', 'Could not close ticket');
+            await api.patch(`/tickets/close/${ticketId}`);
+            setShowDetail(null);
+            fetchTickets();
+          } catch (e: any) {
+            Alert.alert('Error', e?.response?.data?.message || 'Failed to close ticket');
           }
         },
       },
@@ -216,7 +168,7 @@ export default function SupportTicketsScreen({ navigation }: any) {
                   📅 {new Date(ticket.createdAt).toLocaleDateString('en-IN')}
                 </Text>
                 <Text style={st.ticketMeta}>
-                  💬 {ticket.replies.length} replies
+                  💬 {ticket.replies?.length ?? 0} replies
                 </Text>
               </View>
             </TouchableOpacity>
@@ -254,11 +206,7 @@ export default function SupportTicketsScreen({ navigation }: any) {
             <View style={st.modalBtns}>
               <TouchableOpacity
                 style={st.cancelBtn}
-                onPress={() => {
-                  setShowCreate(false);
-                  setTitle('');
-                  setDescription('');
-                }}
+                onPress={() => { setShowCreate(false); setTitle(''); setDescription(''); }}
               >
                 <Text style={st.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
@@ -294,7 +242,6 @@ export default function SupportTicketsScreen({ navigation }: any) {
               </View>
               <Text style={st.detailDesc}>{showDetail?.description}</Text>
 
-              {/* Replies */}
               {(showDetail?.replies?.length ?? 0) > 0 && (
                 <View style={st.repliesSection}>
                   <Text style={st.repliesTitle}>💬 Replies</Text>
@@ -313,7 +260,6 @@ export default function SupportTicketsScreen({ navigation }: any) {
                 </View>
               )}
 
-              {/* Reply Input */}
               {showDetail?.status !== 'CLOSED' && (
                 <View style={st.replyInputBox}>
                   <Text style={st.label}>Add Reply</Text>
@@ -341,10 +287,7 @@ export default function SupportTicketsScreen({ navigation }: any) {
             </ScrollView>
 
             <View style={st.modalBtns}>
-              <TouchableOpacity
-                style={st.cancelBtn}
-                onPress={() => setShowDetail(null)}
-              >
+              <TouchableOpacity style={st.cancelBtn} onPress={() => setShowDetail(null)}>
                 <Text style={st.cancelBtnText}>Close</Text>
               </TouchableOpacity>
               {showDetail?.status !== 'CLOSED' && (

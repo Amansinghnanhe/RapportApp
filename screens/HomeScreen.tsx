@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
   Alert, ScrollView, ActivityIndicator,
@@ -58,7 +58,6 @@ function BackgroundWaves({ isDark, T }: { isDark: boolean; T: typeof THEMES.ligh
           opacity={isDark ? 0.35 : 0.3}
         />
       </Svg>
-
       <Svg width={width} height={220} style={{ position: 'absolute', bottom: 0, left: 0 }}>
         <Path
           d={`M0,100 C${width*0.2},40 ${width*0.55},160 ${width},80 L${width},220 L0,220 Z`}
@@ -71,7 +70,6 @@ function BackgroundWaves({ isDark, T }: { isDark: boolean; T: typeof THEMES.ligh
           opacity={isDark ? 0.2 : 0.18}
         />
       </Svg>
-
       <Svg width={width} height={height} style={StyleSheet.absoluteFillObject}>
         <Circle cx={width * 0.85} cy={height * 0.22} r={90} fill={T.wave1} opacity={isDark ? 0.18 : 0.22} />
         <Circle cx={width * 0.1}  cy={height * 0.45} r={60} fill={T.wave2} opacity={isDark ? 0.12 : 0.15} />
@@ -159,18 +157,17 @@ export default function HomeScreen({ navigation }: any) {
     { icon: '⏳', val: `${todayStats.pendingKYC}`,    lbl: 'Pending KYC',   color: '#DC2626' },
   ];
 
-  // ✅ NEW ORDER BUTTON ADDED
+  // ✅ FIX: 'New Order' goes to PlanList, not directly to Checkout with fake data
   const actions = [
-    { icon: '🏪', label: 'Retailers',    screen: 'RetailerList',  grad: ['#1D4ED8','#3B82F6'] as const },
-    { icon: '📱', label: 'Activate SIM', screen: 'SIMActivation', grad: ['#15803D','#22C55E'] as const },
-    { icon: '📋', label: 'KYC Form',     screen: 'KYC',           grad: ['#B45309','#F59E0B'] as const },
-    { icon: '🎯', label: 'My Targets',   screen: 'DailyTarget',   grad: ['#6D28D9','#A78BFA'] as const },
-    { icon: '📝', label: 'Visit Report', screen: 'VisitReport',   grad: ['#B91C1C','#F87171'] as const },
-    { icon: '👤', label: 'Profile',      screen: 'Profile',       grad: ['#0F766E','#2DD4BF'] as const },
-    { icon: '🛒', label: 'New Order',    screen: 'Checkout',      grad: ['#BE185D','#F472B6'] as const },
-    { icon: '📍', label: 'My Location',  screen: 'LocationTracking',  grad: ['#0369A1','#38BDF8'] as const },
-    { icon: '📊', label: 'Analytics', screen: 'Analytics', grad: ['#6D28D9','#A78BFA'] as const },
-    
+    { icon: '🏪', label: 'Retailers',    screen: 'RetailerList',    grad: ['#1D4ED8','#3B82F6'] as const },
+    { icon: '📱', label: 'Activate SIM', screen: 'SIMActivation',   grad: ['#15803D','#22C55E'] as const },
+    { icon: '📋', label: 'KYC Form',     screen: 'KYC',             grad: ['#B45309','#F59E0B'] as const },
+    { icon: '🎯', label: 'My Targets',   screen: 'DailyTarget',     grad: ['#6D28D9','#A78BFA'] as const },
+    { icon: '📝', label: 'Visit Report', screen: 'VisitReport',     grad: ['#B91C1C','#F87171'] as const },
+    { icon: '👤', label: 'Profile',      screen: 'Profile',         grad: ['#0F766E','#2DD4BF'] as const },
+    { icon: '🛒', label: 'New Order',    screen: 'PlanList',        grad: ['#BE185D','#F472B6'] as const },
+    { icon: '📍', label: 'My Location',  screen: 'LocationTracking',grad: ['#0369A1','#38BDF8'] as const },
+    { icon: '📊', label: 'Analytics',    screen: 'Analytics',       grad: ['#6D28D9','#A78BFA'] as const },
   ];
 
   const activity = [
@@ -315,19 +312,8 @@ export default function HomeScreen({ navigation }: any) {
                 key={i}
                 style={s.actionCard}
                 activeOpacity={0.82}
-                // ✅ UPDATED ONPRESS WITH CHECKOUT NAVIGATION
-                onPress={() => {
-                  if (!a.screen) return;
-                  if (a.screen === 'Checkout') {
-                    navigation.navigate('Checkout', {
-                      cartItems: [
-                        { planId: '6650abc123def456789', name: 'Basic SIM Plan', quantity: 1 },
-                      ],
-                    });
-                  } else {
-                    navigation.navigate(a.screen);
-                  }
-                }}
+                // ✅ FIX: Simple navigate — no more hardcoded planId
+                onPress={() => navigation.navigate(a.screen)}
               >
                 <LinearGradient
                   colors={a.grad}

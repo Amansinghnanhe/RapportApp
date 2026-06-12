@@ -1,11 +1,13 @@
+// screens/RetailerListScreen.tsx
+// ✅ FIX: Removed manual getToken() + axios header setup.
+//         Now uses the shared `api` interceptor which handles tokens automatically.
+
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   TextInput, ActivityIndicator, Alert, RefreshControl
 } from 'react-native';
-import axios from 'axios';
-import { getToken } from '../utils/storage';
-import { API_URL } from '../utils/config';
+import api from '../utils/api';
 
 type Retailer = {
   _id: string;
@@ -18,19 +20,19 @@ type Retailer = {
 };
 
 const DUMMY: Retailer[] = [
-  { _id: '1', shopName: 'Sharma Telecom', ownerName: 'Raj Sharma', mobile: '9876543210', area: 'Karol Bagh', city: 'Delhi', isActive: true },
-  { _id: '2', shopName: 'Galaxy Mobile', ownerName: 'Suresh Kumar', mobile: '9123456780', area: 'Lajpat Nagar', city: 'Delhi', isActive: true },
-  { _id: '3', shopName: 'Raj Mobile Store', ownerName: 'Amit Raj', mobile: '9988776655', area: 'Rohini', city: 'Delhi', isActive: false },
-  { _id: '4', shopName: 'New India Telecom', ownerName: 'Priya Singh', mobile: '9871234560', area: 'Dwarka', city: 'Delhi', isActive: true },
-  { _id: '5', shopName: 'Star Mobile', ownerName: 'Vikram Yadav', mobile: '9654321870', area: 'Saket', city: 'Delhi', isActive: true },
+  { _id: '1', shopName: 'Sharma Telecom',    ownerName: 'Raj Sharma',    mobile: '9876543210', area: 'Karol Bagh',   city: 'Delhi', isActive: true  },
+  { _id: '2', shopName: 'Galaxy Mobile',     ownerName: 'Suresh Kumar',  mobile: '9123456780', area: 'Lajpat Nagar', city: 'Delhi', isActive: true  },
+  { _id: '3', shopName: 'Raj Mobile Store',  ownerName: 'Amit Raj',      mobile: '9988776655', area: 'Rohini',       city: 'Delhi', isActive: false },
+  { _id: '4', shopName: 'New India Telecom', ownerName: 'Priya Singh',   mobile: '9871234560', area: 'Dwarka',       city: 'Delhi', isActive: true  },
+  { _id: '5', shopName: 'Star Mobile',       ownerName: 'Vikram Yadav',  mobile: '9654321870', area: 'Saket',        city: 'Delhi', isActive: true  },
 ];
 
 export default function RetailerListScreen({ navigation }: any) {
-  const [retailers, setRetailers] = useState<Retailer[]>([]);
-  const [filtered, setFiltered] = useState<Retailer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [retailers,  setRetailers]  = useState<Retailer[]>([]);
+  const [filtered,   setFiltered]   = useState<Retailer[]>([]);
+  const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [search, setSearch] = useState('');
+  const [search,     setSearch]     = useState('');
 
   useEffect(() => { fetchRetailers(); }, []);
 
@@ -49,18 +51,14 @@ export default function RetailerListScreen({ navigation }: any) {
 
   const fetchRetailers = async () => {
     try {
-      const token = await getToken();
-      // ✅ SAHI URL
-      const res = await axios.get(`${API_URL}/mr/retailers`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = res.data?.data || res.data || [];
-      const list = Array.isArray(data) ? data : [];
+      // ✅ FIX: api interceptor handles Authorization header automatically
+      const res = await api.get('/mr/retailers');
+      const list = Array.isArray(res.data?.data) ? res.data.data : [];
       setRetailers(list.length > 0 ? list : DUMMY);
       setFiltered(list.length > 0 ? list : DUMMY);
     } catch (error: any) {
       console.log('Retailers error:', error?.response?.status, error?.message);
-      // Backend ready nahi hai toh dummy data
+      // Fallback to dummy data if backend isn't ready
       setRetailers(DUMMY);
       setFiltered(DUMMY);
     } finally {
@@ -205,42 +203,42 @@ export default function RetailerListScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F0F4FF' },
-  loadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F4FF', gap: 12 },
+  safe:        { flex: 1, backgroundColor: '#F0F4FF' },
+  loadingBox:  { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F4FF', gap: 12 },
   loadingText: { fontSize: 14, color: '#9999B0' },
-  header: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 14, paddingTop: 50, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, gap: 12 },
-  backBtn: { width: 38, height: 38, borderRadius: 12, backgroundColor: '#F0F4FF', justifyContent: 'center', alignItems: 'center' },
-  backArrow: { fontSize: 20, color: '#1A1A2E', fontWeight: '700' },
+  header:      { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 14, paddingTop: 50, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, gap: 12 },
+  backBtn:     { width: 38, height: 38, borderRadius: 12, backgroundColor: '#F0F4FF', justifyContent: 'center', alignItems: 'center' },
+  backArrow:   { fontSize: 20, color: '#1A1A2E', fontWeight: '700' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: '#1A1A2E' },
-  headerSub: { fontSize: 12, color: '#9999B0', marginTop: 2 },
-  countBadge: { backgroundColor: '#1A56DB', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  countText: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', margin: 16, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 6 },
-  searchIcon: { fontSize: 16, marginRight: 8 },
+  headerSub:   { fontSize: 12, color: '#9999B0', marginTop: 2 },
+  countBadge:  { backgroundColor: '#1A56DB', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  countText:   { color: '#fff', fontSize: 12, fontWeight: '700' },
+  searchBox:   { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', margin: 16, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 6 },
+  searchIcon:  { fontSize: 16, marginRight: 8 },
   searchInput: { flex: 1, fontSize: 14, color: '#1A1A2E' },
-  statsRow: { flexDirection: 'row', backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 14, padding: 14, marginBottom: 12, elevation: 2 },
-  statItem: { flex: 1, alignItems: 'center' },
-  statVal: { fontSize: 20, fontWeight: '800', color: '#1A56DB' },
-  statLbl: { fontSize: 11, color: '#9999B0', marginTop: 2 },
+  statsRow:    { flexDirection: 'row', backgroundColor: '#fff', marginHorizontal: 16, borderRadius: 14, padding: 14, marginBottom: 12, elevation: 2 },
+  statItem:    { flex: 1, alignItems: 'center' },
+  statVal:     { fontSize: 20, fontWeight: '800', color: '#1A56DB' },
+  statLbl:     { fontSize: 11, color: '#9999B0', marginTop: 2 },
   statDivider: { width: 1, backgroundColor: '#F0F0F5' },
-  list: { paddingHorizontal: 16, paddingBottom: 30 },
-  card: { backgroundColor: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
-  cardLeft: { flexDirection: 'row', gap: 12, marginBottom: 12 },
-  avatar: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontSize: 24 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
-  shopName: { fontSize: 15, fontWeight: '700', color: '#1A1A2E', flex: 1, marginRight: 8 },
-  badge: { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { fontSize: 10, fontWeight: '700' },
-  ownerName: { fontSize: 12, color: '#7A7A9D', marginBottom: 2 },
-  area: { fontSize: 12, color: '#7A7A9D', marginBottom: 2 },
-  mobile: { fontSize: 12, color: '#7A7A9D' },
-  actionRow: { flexDirection: 'row', gap: 10 },
-  visitBtn: { flex: 1, backgroundColor: '#EEF2FF', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
-  visitBtnText: { color: '#4338CA', fontSize: 13, fontWeight: '700' },
-  simBtn: { flex: 1, backgroundColor: '#EAFAF1', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
-  simBtnText: { color: '#15803D', fontSize: 13, fontWeight: '700' },
-  emptyBox: { alignItems: 'center', marginTop: 80, gap: 8 },
-  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A2E' },
-  emptySub: { fontSize: 13, color: '#9999B0', textAlign: 'center' },
+  list:        { paddingHorizontal: 16, paddingBottom: 30 },
+  card:        { backgroundColor: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8 },
+  cardLeft:    { flexDirection: 'row', gap: 12, marginBottom: 12 },
+  avatar:      { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+  avatarText:  { fontSize: 24 },
+  nameRow:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  shopName:    { fontSize: 15, fontWeight: '700', color: '#1A1A2E', flex: 1, marginRight: 8 },
+  badge:       { borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 },
+  badgeText:   { fontSize: 10, fontWeight: '700' },
+  ownerName:   { fontSize: 12, color: '#7A7A9D', marginBottom: 2 },
+  area:        { fontSize: 12, color: '#7A7A9D', marginBottom: 2 },
+  mobile:      { fontSize: 12, color: '#7A7A9D' },
+  actionRow:   { flexDirection: 'row', gap: 10 },
+  visitBtn:    { flex: 1, backgroundColor: '#EEF2FF', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  visitBtnText:{ color: '#4338CA', fontSize: 13, fontWeight: '700' },
+  simBtn:      { flex: 1, backgroundColor: '#EAFAF1', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  simBtnText:  { color: '#15803D', fontSize: 13, fontWeight: '700' },
+  emptyBox:    { alignItems: 'center', marginTop: 80, gap: 8 },
+  emptyTitle:  { fontSize: 18, fontWeight: '700', color: '#1A1A2E' },
+  emptySub:    { fontSize: 13, color: '#9999B0', textAlign: 'center' },
 });

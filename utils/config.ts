@@ -1,3 +1,5 @@
+// utils/config.ts
+// ✅ FIX: Single source of truth for API URL — change this one place only
 export const API_URL = 'http://192.168.29.108:5000/api/v1';
 
 export const ENDPOINTS = {
@@ -6,12 +8,13 @@ export const ENDPOINTS = {
   verifyOtp:      `${API_URL}/auth/verify-otp`,
   profile:        `${API_URL}/user/profile`,
   changePassword: `${API_URL}/user/change-password`,
-  retailers:      `${API_URL}/marketR`,        // ✅ Yahi sahi hai
-  orders:         `${API_URL}/checkout`,        // ✅ Yahi sahi hai
+  retailers:      `${API_URL}/mr/retailers`,
+  orders:         `${API_URL}/orders`,
   kyc:            `${API_URL}/kyc`,
   analytics:      `${API_URL}/analytics`,
-  visitLog:       `${API_URL}/mr/location`,     // ✅ Yahi sahi hai
+  visitLog:       `${API_URL}/mr/location`,
   tickets:        `${API_URL}/admin/tickets`,
-  mrProfile:      `${API_URL}/mr/profile`,      // ✅ Naya add kiya
-  toggleOnline:   `${API_URL}/mr/toggle-online`,// ✅ Naya add kiya
+  mrProfile:      `${API_URL}/mr/profile`,
+  toggleOnline:   `${API_URL}/mr/toggle-online`,
+  checkout:       `${API_URL}/checkout-session`,
 };

@@ -1,49 +1,51 @@
+// App.tsx
+// ✅ CHANGES:
+//   1. Added PlanListScreen to the stack navigator
+//   2. Removed MRDashboard from the separate stack (it's in the tabs now via HomeScreen)
+//      — if you need MRDashboard as a standalone screen keep it, but OrderSuccess
+//        should navigate to 'Main' not 'MRDashboard'
+
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { ActivityIndicator, View, Text, Platform } from 'react-native';
 
-import RegisterScreen from './screens/RegisterScreen';
-import LoginScreen from './screens/LoginScreen';
-import OTPScreen from './screens/OTPScreen';
-import HomeScreen from './screens/HomeScreen';
-import ProfileScreen from './screens/ProfileScreen';
-import SettingsScreen from './screens/SettingsScreen';
-import MRDashboard from './screens/MRDashboard';
-import CheckoutScreen from './screens/CheckoutScreen';
-import OrderSuccessScreen from './screens/OrderSuccessScreen';
-import AnalyticsScreen from './screens/AnalyticsScreen';
+import RegisterScreen        from './screens/RegisterScreen';
+import LoginScreen           from './screens/LoginScreen';
+import OTPScreen             from './screens/OTPScreen';
+import HomeScreen            from './screens/HomeScreen';
+import ProfileScreen         from './screens/ProfileScreen';
+import SettingsScreen        from './screens/SettingsScreen';
+import MRDashboard           from './screens/MRDashboard';
+import PlanListScreen        from './screens/PlanListScreen';   // ✅ NEW
+import CheckoutScreen        from './screens/CheckoutScreen';
+import OrderSuccessScreen    from './screens/OrderSuccessScreen';
+import AnalyticsScreen       from './screens/AnalyticsScreen';
 
+import ChangePasswordScreen  from './screens/ChangePasswordScreen';
+import LinkedDevicesScreen   from './screens/LinkedDevicesScreen';
+import LanguageScreen        from './screens/LanguageScreen';
+import AppearanceScreen      from './screens/AppearanceScreen';
+import AboutAppScreen        from './screens/AboutAppScreen';
+import PrivacyPolicyScreen   from './screens/PrivacyPolicyScreen';
 
-// Sub-screens
-import ChangePasswordScreen from './screens/ChangePasswordScreen';
-import LinkedDevicesScreen from './screens/LinkedDevicesScreen';
-import LanguageScreen from './screens/LanguageScreen';
-import AppearanceScreen from './screens/AppearanceScreen';
-import AboutAppScreen from './screens/AboutAppScreen';
-import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
-
-// ✅ NEW: SIM Delivery MR Screens
-import RetailerListScreen from './screens/RetailerListScreen';
-import SIMActivationScreen from './screens/SIMActivationScreen';
-import KYCScreen from './screens/KYCScreen';
-import DailyTargetScreen from './screens/DailyTargetScreen';
-import VisitReportScreen from './screens/VisitReportScreen';
-import SupportTicketsScreen from './screens/SupportTicketsScreen';
+import RetailerListScreen    from './screens/RetailerListScreen';
+import SIMActivationScreen   from './screens/SIMActivationScreen';
+import KYCScreen             from './screens/KYCScreen';
+import DailyTargetScreen     from './screens/DailyTargetScreen';
+import VisitReportScreen     from './screens/VisitReportScreen';
+import SupportTicketsScreen  from './screens/SupportTicketsScreen';
 import LocationTrackingScreen from './screens/LocationTrackingScreen';
 
 import { getToken } from './utils/storage';
 
 const Stack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
+const Tab   = createBottomTabNavigator();
 
-// ── Bottom Tabs (MR ke liye) ──────────────────────────────
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const icons: Record<string, string> = {
-    Home: '🏠',
-    Profile: '👤',
-    Settings: '⚙️',
+    Home: '🏠', Profile: '👤', Settings: '⚙️',
   };
   return (
     <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>
@@ -63,13 +65,13 @@ function MRTabs() {
             {route.name}
           </Text>
         ),
-        tabBarActiveTintColor: '#3182CE',
+        tabBarActiveTintColor:   '#3182CE',
         tabBarInactiveTintColor: '#B0B0C3',
         tabBarStyle: {
           backgroundColor: '#fff',
           borderTopWidth: 0,
           elevation: 20,
-          height: Platform.OS === 'ios' ? 84 : 62,
+          height:       Platform.OS === 'ios' ? 84 : 62,
           paddingBottom: Platform.OS === 'ios' ? 24 : 8,
           paddingTop: 8,
         },
@@ -82,9 +84,8 @@ function MRTabs() {
   );
 }
 
-// ── Main App ──────────────────────────────────────────────
 export default function App() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading,  setIsLoading]  = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => { checkLogin(); }, []);
@@ -109,25 +110,30 @@ export default function App() {
         initialRouteName={isLoggedIn ? 'Main' : 'Login'}
         screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
       >
-        {/* ── Auth Screens ── */}
+        {/* Auth */}
         <Stack.Screen name="Login"    component={LoginScreen}    />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="OTP"      component={OTPScreen}      />
 
-        {/* ── MR Main App (Bottom Tabs) ── */}
-        <Stack.Screen name="Main" component={MRTabs} />
-
-        {/* ── MR Dashboard ── */}
+        {/* Main Tabs */}
+        <Stack.Screen name="Main"        component={MRTabs}    />
         <Stack.Screen name="MRDashboard" component={MRDashboard} />
 
-        {/* ── ✅ NEW: SIM Delivery Screens ── */}
-        <Stack.Screen name="RetailerList"  component={RetailerListScreen}  />
-        <Stack.Screen name="SIMActivation" component={SIMActivationScreen} />
-        <Stack.Screen name="KYC"           component={KYCScreen}           />
-        <Stack.Screen name="DailyTarget"   component={DailyTargetScreen}   />
-        <Stack.Screen name="VisitReport"   component={VisitReportScreen}   />
+        {/* ✅ NEW: Plan selection → Checkout → Success flow */}
+        <Stack.Screen name="PlanList"     component={PlanListScreen}     />
+        <Stack.Screen name="Checkout"     component={CheckoutScreen}     />
+        <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
 
-        {/* ── Common Sub-screens ── */}
+        {/* MR Screens */}
+        <Stack.Screen name="RetailerList"     component={RetailerListScreen}     />
+        <Stack.Screen name="SIMActivation"    component={SIMActivationScreen}    />
+        <Stack.Screen name="KYC"              component={KYCScreen}              />
+        <Stack.Screen name="DailyTarget"      component={DailyTargetScreen}      />
+        <Stack.Screen name="VisitReport"      component={VisitReportScreen}      />
+        <Stack.Screen name="LocationTracking" component={LocationTrackingScreen} />
+        <Stack.Screen name="Analytics"        component={AnalyticsScreen}        />
+
+        {/* Settings Sub-screens */}
         <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
         <Stack.Screen name="LinkedDevices"  component={LinkedDevicesScreen}  />
         <Stack.Screen name="Language"       component={LanguageScreen}       />
@@ -135,10 +141,6 @@ export default function App() {
         <Stack.Screen name="AboutApp"       component={AboutAppScreen}       />
         <Stack.Screen name="PrivacyPolicy"  component={PrivacyPolicyScreen}  />
         <Stack.Screen name="SupportTickets" component={SupportTicketsScreen} />
-        <Stack.Screen name="Checkout" component={CheckoutScreen} />
-        <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
-        <Stack.Screen name="LocationTracking" component={LocationTrackingScreen} />
-        <Stack.Screen name="Analytics" component={AnalyticsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
